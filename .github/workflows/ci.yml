@@ -9,7 +9,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: "0 7 * * *" # daily (UTC)
+    - cron: "30 18 * * *" # daily (UTC)
 
 permissions:
   contents: write # release assets on tags
