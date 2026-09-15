@@ -1,0 +1,32 @@
+# Build, test, package, and release Day Tunes with the reusable workflow every Day app uses
+# (daybrite/actions).
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * *" # daily (UTC)
+
+permissions:
+  contents: write # release assets on tags
+  pages: write # deploy-web
+  id-token: write # deploy-pages OIDC
+
+jobs:
+  app:
+    uses: daybrite/actions/.github/workflows/dayapp.yml@main
+    secrets: inherit
+    with:
+      targets: windows-xaml, macos-appkit, linux-gtk, linux-qt, ios-uikit, android-mdc, harmony-arkui, web-dom
+      day-version: main
+      scripts: dayscript/walkthrough.yaml
+      # The walkthrough reads the small catalog bundled under resource/assets/catalog-fixture
+      # instead of downloading the published one: no network, and the same code path.
+      launch-env: TUNES_CATALOG_URL=asset:catalog-fixture
+      locales: en
+      app-id: dev.daybrite.tunes
+      deploy-web: true

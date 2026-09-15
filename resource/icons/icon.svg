@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B1650"/>
+      <stop offset="0.6" stop-color="#3B2FA8"/>
+      <stop offset="1" stop-color="#6D5BE8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.42" cy="0.52" r="0.55">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="dial" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DCD8FF"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD166"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <!-- Day icon master (docs/icons.md): full-bleed square backdrop, platforms mask it. -->
+  <g id="day:background">
+    <rect width="1024" height="1024" fill="url(#night)"/>
+    <rect width="1024" height="1024" fill="url(#glow)"/>
+  </g>
+  <g id="day:foreground">
+    <!-- A tuning dial, its needle on a station, and the signal spreading from it. -->
+    <circle cx="420" cy="530" r="190" fill="none" stroke="url(#dial)" stroke-width="44"/>
+    <circle cx="420" cy="530" r="66" fill="url(#dial)"/>
+    <line x1="420" y1="530" x2="548" y2="402" stroke="url(#amber)" stroke-width="30" stroke-linecap="round"/>
+    <g fill="none" stroke="url(#amber)" stroke-width="40" stroke-linecap="round">
+      <path d="M 649.4 369.4 A 280 280 0 0 1 649.4 690.6"/>
+      <path d="M 714.9 323.5 A 360 360 0 0 1 714.9 736.5" opacity="0.8"/>
+      <path d="M 780.4 277.6 A 440 440 0 0 1 780.4 782.4" opacity="0.55"/>
+    </g>
+  </g>
+  <!-- Single-color silhouette for themed/tinted icons (Android 13, Icon Composer Tinted):
+       solid paint only, VectorDrawable subset. Hidden so plain viewers show the icon as
+       shipped; the pipeline re-enables it. -->
+  <g id="day:monochrome" display="none">
+    <circle cx="420" cy="530" r="190" fill="none" stroke="#000000" stroke-width="44"/>
+    <circle cx="420" cy="530" r="66" fill="#000000"/>
+    <line x1="420" y1="530" x2="548" y2="402" stroke="#000000" stroke-width="30" stroke-linecap="round"/>
+    <g fill="none" stroke="#000000" stroke-width="40" stroke-linecap="round">
+      <path d="M 649.4 369.4 A 280 280 0 0 1 649.4 690.6"/>
+      <path d="M 714.9 323.5 A 360 360 0 0 1 714.9 736.5"/>
+      <path d="M 780.4 277.6 A 440 440 0 0 1 780.4 782.4"/>
+    </g>
+  </g>
+</svg>

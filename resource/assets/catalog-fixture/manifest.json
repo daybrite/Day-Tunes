@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-09-02T13:00:39Z",
+  "count": 238,
+  "source": "stations.sqlite",
+  "artifacts": {
+    "sqlite": {
+      "path": "data/stations.sqlite",
+      "size": 806912,
+      "sha256": "06fa7f0b3d9125ba9c160d839981beec62ad72e564a5054fed8761b4eb3aa863"
+    }
+  }
+}

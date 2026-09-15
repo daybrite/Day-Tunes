@@ -1,0 +1,207 @@
+# A dayscript walkthrough (https://daybrite.dev/docs/dayscript): drives the running app by
+# element id and route, on any target. It is both the app's test and its demo — every feature
+# the app ships is exercised here, in the order a listener would meet them.
+#
+#     day launch -p macos-appkit --env TUNES_CATALOG_URL=asset:catalog-fixture \
+#         --script dayscript/walkthrough.yaml
+#
+# CONTRACT: this script never depends on the network. The catalog comes from the small copy
+# bundled under resource/assets/catalog-fixture (built by scripts/build-fixture.py from the
+# published file, same schema), through the same manifest-check-download-attach path a real
+# launch takes — `TUNES_CATALOG_URL` names where the manifest is. The script opens station
+# pages and presses Play, but asserts nothing about what the stream did: a CI runner may have
+# no route to a station, and the state line reports that honestly. Steps that need a window
+# toolbar or a menu bar carry `skip_on:` for the platforms that have neither.
+flow:
+  # --- The catalog arrives ------------------------------------------------------------------
+  # On a first launch the lists wait for the catalog: the download panel shows in their place
+  # until the file is verified and attached. On a later launch the copy on disk attaches at
+  # once and the panel never shows, so nothing here asserts on it.
+  - wait_for: { id: nav, within: 60 }
+  - navigate: { route: browse }
+  - assert_route: { route: browse }
+  - wait_for: { id: browse-list, within: 60 }
+  - screenshot: browse
+
+  # Selecting a row opens its page: beside the list on a desktop, pushed over it on a phone.
+  - select: { id: browse-list, index: 0 }
+  - wait_for: { id: station-name }
+  - assert_visible: { id: station-play }
+  - assert_visible: { id: station-favorite }
+  - screenshot: station
+
+  # Play. The state line appears for the station on air whatever the stream does.
+  - tap: { id: station-play }
+  - wait_for: { id: station-state }
+  - pause: { secs: 3 }
+  - screenshot: playing-station
+
+  # Favorite it, so the Library has something to show below.
+  - tap: { id: station-favorite }
+  - wait_idle: {}
+
+  # The listener's own words: a note, and a tag the Library can filter by. Both live in the
+  # app's store beside the downloaded catalog, keyed by the station's uuid.
+  - input: { id: station-note, text: "Good in the morning." }
+  - wait_idle: {}
+  - input: { id: station-tag-field, text: "morning" }
+  - tap: { id: station-tag-add }
+  - wait_for: { id: station-user-tag-morning }
+  - screenshot: station-notes
+
+  # Back to the list on the shapes that pushed the page; a wide window has both and passes.
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - wait_idle: { only_on: [uikit, mdc, arkui] }
+  - assert_route: { route: browse, only_on: [uikit, mdc, arkui] }
+
+  # --- Browse: countries, genres, languages -------------------------------------------------
+  # The cut is a segmented control: in the window toolbar where the toolkit places the station
+  # list in a pane of its own, and the page toolbar on other targets. A pick pushes the cut's stations as a real page, so the platform's back returns
+  # to the cut (https://daybrite.dev/docs/navigation).
+  - toolbar: { item: tb-cut, index: 1 }
+  - wait_for: { id: country-list }
+  - screenshot: countries
+  - select: { id: country-list, index: 0 }
+  - wait_for: { id: browse-list }
+  - screenshot: country
+  - nav_back: {}
+  - wait_for: { id: country-list }
+  - toolbar: { item: tb-cut, index: 2 }
+  - wait_for: { id: tag-list }
+  - screenshot: genres
+  - select: { id: tag-list, index: 0 }
+  - wait_for: { id: browse-list }
+  - screenshot: genre
+  - nav_back: {}
+  - wait_for: { id: tag-list }
+  - toolbar: { item: tb-cut, index: 3 }
+  - wait_for: { id: language-list }
+  - select: { id: language-list, index: 0 }
+  - wait_for: { id: browse-list }
+  - nav_back: {}
+  - wait_for: { id: language-list }
+  - toolbar: { item: tb-cut, index: 0 }
+  - wait_for: { id: browse-list }
+
+  # --- Search ---------------------------------------------------------------------------------
+  - navigate: { route: search }
+  - assert_route: { route: search }
+  - wait_for: { id: search-field }
+  - assert_visible: { id: search-hint }
+  - input: { id: search-field, text: "jazz" }
+  - wait_idle: {}
+  - wait_for: { id: search-list }
+  - screenshot: search
+  - select: { id: search-list, index: 0 }
+  - wait_for: { id: station-name }
+  - screenshot: search-station
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - wait_idle: { only_on: [uikit, mdc, arkui] }
+  # A search with no matches says so rather than showing an empty pane.
+  - input: { id: search-field, text: "zzzzqqqqxxxx" }
+  - wait_idle: {}
+  - wait_for: { id: search-none }
+  - input: { id: search-field, text: "" }
+  - wait_idle: {}
+
+  # --- Library --------------------------------------------------------------------------------
+  - navigate: { route: library }
+  - assert_route: { route: library }
+  - wait_for: { id: library-list }
+  - screenshot: favorites
+  # The tag filter appears once there is a tag; the favorite above carries "morning".
+  - wait_for: { id: library-tag }
+  - select: { id: library-tag, index: 1 }
+  - wait_idle: {}
+  - screenshot: favorites-tagged
+  - select: { id: library-tag, index: 0 }
+  - wait_idle: {}
+  - select: { id: library-cut, index: 1 }
+  - wait_idle: {}
+  - screenshot: recents
+  - select: { id: library-cut, index: 0 }
+  - wait_idle: {}
+
+  # --- Now Playing ----------------------------------------------------------------------------
+  # The transport: Previous and Next walk the list the station was picked from (the Top list
+  # here), the star favorites it, the volume is one slider.
+  - navigate: { route: playing }
+  - assert_route: { route: playing }
+  - wait_for: { id: playing-name }
+  - assert_visible: { id: playing-toggle }
+  - assert_visible: { id: playing-volume }
+  - set_value: { id: playing-volume, value: 0.5 }
+  - screenshot: now-playing
+  - tap: { id: playing-next }
+  - wait_idle: {}
+  - pause: { secs: 2 }
+  - screenshot: now-playing-next
+  - tap: { id: playing-previous }
+  - wait_idle: {}
+  # Pause, then start the same station over from the transport.
+  - tap: { id: playing-toggle }
+  - wait_idle: {}
+  - tap: { id: playing-toggle }
+  - wait_idle: {}
+  - pause: { secs: 2 }
+  - tap: { id: playing-stop }
+  - wait_idle: {}
+
+  # --- Adaptive navigation --------------------------------------------------------------------
+  # The same host, re-presented. What matters is that the selection survives it.
+  - navigate: { route: browse }
+  - wait_idle: {}
+  - size_class: { width: compact }
+  - wait_idle: {}
+  - assert_route: { route: browse }
+  - screenshot: compact
+  - size_class: { width: expanded }
+  - wait_idle: {}
+  - assert_route: { route: browse }
+  - size_class: { width: auto }
+  - wait_idle: {}
+
+  # --- The desktop transport ------------------------------------------------------------------
+  # Play/pause and Stop in the window toolbar, and the same commands in the Playback menu.
+  - navigate: { route: browse }
+  - select: { id: browse-list, index: 1 }
+  - wait_for: { id: station-play }
+  - tap: { id: station-play }
+  - wait_idle: {}
+  - toolbar: { item: tb-play, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
+  - wait_idle: {}
+  - toolbar: { item: tb-next, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
+  - wait_idle: {}
+  - toolbar: { item: tb-stop, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
+  - wait_idle: {}
+  - screenshot: toolbar
+
+  # --- Settings -------------------------------------------------------------------------------
+  # A SECTION on the phones; on a desktop it is a real Settings window reached from the App
+  # menu, so the route does not exist there (https://daybrite.dev/docs/windows). The catalog
+  # section says what is installed and lets the listener check for an update.
+  - navigate: { route: settings, skip_on: [appkit, gtk, qt, xaml] }
+  - assert_visible: { id: language-picker, skip_on: [appkit, gtk, qt, xaml] }
+  - assert_visible: { id: catalog-installed, skip_on: [appkit, gtk, qt, xaml] }
+  - tap: { id: catalog-check, skip_on: [appkit, gtk, qt, xaml] }
+  - wait_idle: { skip_on: [appkit, gtk, qt, xaml] }
+  - screenshot: { name: settings, skip_on: [appkit, gtk, qt, xaml] }
+
+  # Tidy: the tag and the favorite come off again, so a second run on the same store starts
+  # where this one did. Through Browse, since the Library empties as the favorite goes.
+  - navigate: { route: browse }
+  - wait_for: { id: browse-list }
+  - select: { id: browse-list, index: 0 }
+  - wait_for: { id: station-user-tag-morning }
+  - tap: { id: station-user-tag-morning }
+  - wait_idle: {}
+  - tap: { id: station-favorite }
+  - wait_idle: {}
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - wait_idle: { only_on: [uikit, mdc, arkui] }
+
+  # Leave the app quiet: nothing streaming after the walkthrough.
+  - navigate: { route: playing }
+  - wait_for: { id: playing-stop }
+  - tap: { id: playing-stop }
+  - wait_idle: {}

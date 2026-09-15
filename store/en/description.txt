@@ -1,0 +1,7 @@
+Day Tunes is an internet radio player built on the Tune Out catalog: 48,000 stations from radio-browser.info, deduplicated, tagged with a closed set of genres, and scored by hand.
+
+Browse by country, genre, or language, or start from the catalog's top stations. Search finds stations by name, genre, or country as you type. Favorite the ones you keep coming back to, and the Library remembers what you played.
+
+Playback uses your platform's own media player and keeps going in the background. Stations that publish several streams show one Play button per stream, so you can pick the bitrate and codec.
+
+The catalog ships inside the app, so browsing and search work offline. Playing a station needs a network connection.

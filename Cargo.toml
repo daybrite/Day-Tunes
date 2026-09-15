@@ -1,0 +1,49 @@
+[package]
+name = "day-tunes"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+description = "Internet radio: browse, search, and listen to the Tune Out catalog on every platform."
+# Generates typed `res::` constants from `resource/` (see build.rs).
+build = "build.rs"
+
+[features]
+# `mock` keeps bare cargo and rust-analyzer compiling; `day build` overrides it with
+# `--no-default-features --features <backend>` (https://daybrite.dev/docs/project-structure).
+default = ["mock"]
+appkit = ["day/appkit", "day-piece-remote-image/appkit"]
+gtk = ["day/gtk", "day-piece-remote-image/gtk"]
+qt = ["day/qt", "day-piece-remote-image/qt"]
+uikit = ["day/uikit", "day-piece-remote-image/uikit"]
+mdc = ["day/mdc", "day-piece-remote-image/mdc"]
+xaml = ["day/xaml", "day-piece-remote-image/xaml"]
+# The remote image has no ArkUI or web arm; the artwork falls back to the placeholder there.
+arkui = ["day/arkui"]
+dom = ["day/dom"]
+mock = ["day/mock", "day-piece-remote-image/mock"]
+
+# rlib for the desktop bin; the mobile pipeline requests staticlib/cdylib via `cargo rustc`.
+[lib]
+# A constant lib name: staged artifacts and the `dayapp::` import never move on a package rename.
+name = "dayapp"
+crate-type = ["rlib"]
+
+[dependencies]
+# The listener's store, with the downloaded catalog attached to it (src/catalog.rs).
+day = { git = "https://github.com/daybrite/day.git", features = ["persistence"] }
+# The stream player: sound only, driven by the app's own transport (src/lib.rs).
+day-piece-media = { git = "https://github.com/daybrite/day-piece-media.git" }
+day-piece-settings = { git = "https://github.com/daybrite/day.git" }
+# The station's logo on the Now Playing page, fetched from the catalog's favicon URL.
+day-piece-remote-image = { git = "https://github.com/daybrite/day.git" }
+# Fetches the catalog's manifest and streams the database to disk (src/sync.rs).
+day-part-http = { git = "https://github.com/daybrite/day.git" }
+# The catalog's manifest is JSON (src/sync.rs); both crates are already in day's tree.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[build-dependencies]
+day-build = { git = "https://github.com/daybrite/day.git" }
+
+
+[workspace]
