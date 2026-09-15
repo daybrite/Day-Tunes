@@ -20,18 +20,23 @@ The launch prints the checkout location so you can open the code and change it.
 
 - Browse the [Tune Out catalog](https://github.com/Tune-Out/stations) by country, genre,
   language, or top stations. Search names, genres, and countries as you type.
-- Choose a station's stream, inspect its format, or visit its homepage.
+- Play stations and choose among the available streams; inspect their formats or visit their
+  homepages.
 - Keep favorites, listening history, notes, and tags. Your library stays on the device and
   survives catalog updates.
-- Control playback from Now Playing, with volume, a favorite button, and Previous and Next
-  through the list you were browsing. Desktop windows also have toolbar controls and a
-  Playback menu. Track details appear when the stream and platform provide them.
+- Browse while listening. Desktop toolbar controls and a separate Now Playing destination
+  provide playback, volume, favorites, and Previous/Next through the station list.
+- Select a station to open its details. Track details appear when the stream and platform
+  provide them.
 - Change the appearance and language, check for catalog updates, or use another catalog URL
   in Settings.
 
 The catalog downloads on first launch and updates in the background. Once downloaded, it is
 available for offline browsing and search; listening still needs a network connection.
-Navigation adapts to the window size, with tabs, a rail, or a sidebar.
+Navigation adapts to the window size, with tabs, a rail, or a sidebar. Audio is hosted in the
+first window's piece tree; it survives page changes, but is not an application-owned background
+service. Activity recreation can restart the player. Lock-screen controls and guaranteed
+background playback are not implemented.
 
 Playback uses [day-piece-media](https://github.com/daybrite/day-piece-media) and the platform's
 media engine. Available codecs and plugins determine which streams work. GTK installations
@@ -92,9 +97,10 @@ set `DAY_WEB_DRIVER_PLAYWRIGHT` to the directory containing its `node_modules`.
 
 ## Inside the code
 
-- [src/lib.rs](src/lib.rs) sets up navigation, menus, toolbar controls, and the media player.
+- [src/lib.rs](src/lib.rs) sets up navigation, menus, overlays, and the media player.
   `App` holds the shared catalog, sync, and playback state; `Scene` holds each window's
-  navigation and selection. The player lives in the primary window, so closing it ends playback.
+  navigation and selection. An application-owned audio service keeps playback independent of
+  individual windows.
 - [src/catalog.rs](src/catalog.rs) defines the station queries and listener data. A read-only
   catalog is attached to the listener's SQLite database, with favorites, notes, and tags linked
   by station UUID. Search uses SQLite's full-text index.
