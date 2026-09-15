@@ -5,7 +5,7 @@ schema = 1
 [app]
 id = "dev.daybrite.tunes"
 title = "Day Tunes"
-build = 1
+build = 3
 targets = ["macos-appkit", "macos-gtk", "macos-qt", "ios-uikit", "android-mdc", "linux-gtk", "linux-qt", "windows-xaml", "windows-gtk", "windows-qt", "harmony-arkui", "web-dom"]
 
 # The window's geometry in points (https://daybrite.dev/docs/size-classes). `width`/`height` are
