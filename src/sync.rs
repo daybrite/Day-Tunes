@@ -8,7 +8,7 @@
 //! ```
 //!
 //! On every launch the app reads the manifest, and when its sha256 differs from the copy on
-//! disk it streams the file to a temp path — hashing as it lands — then renames it into place
+//! disk it streams the file to a temp path (hashing as it lands), then renames it into place
 //! and re-attaches it, so the old copy keeps answering until the new one is whole. The base is
 //! a constant with a Settings override; a `file:` or `asset:` base reads the same two files
 //! from disk or from the app bundle, which is what the walkthrough uses.
@@ -143,7 +143,7 @@ impl Sync {
         });
     }
 
-    /// Attach the copy on disk, if there is one — the launch path that needs no network.
+    /// Attach the copy on disk, if there is one: the launch path that needs no network.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn attach_installed(self, catalog: &'static Catalog) {
         let Ok(p) = paths() else {
@@ -303,7 +303,7 @@ impl Sync {
             ));
         }
         // Into place: on Windows a rename over an existing file fails, so the old copy goes
-        // first — after the download is whole and verified, never before.
+        // first, after the download is whole and verified, never before.
         let _ = std::fs::remove_file(&p.db);
         std::fs::rename(&p.part, &p.db).map_err(|e| format!("{}: {e}", p.dir.display()))?;
         catalog.attach(&p.db).map_err(|e| e.to_string())?;
@@ -535,7 +535,7 @@ fn stream_to_file(url: &str, dest: &Path, shared: &Arc<Mutex<Progress>>) -> Resu
             if status != 200 {
                 return false;
             }
-            // Content-Length sizes the WIRE, and a server that compresses the file on the
+            // Content-Length sizes the wire, and a server that compresses the file on the
             // way sends fewer bytes than land here; the manifest's size is the file's. Fall
             // back on the header only when the manifest gave none.
             let length = headers

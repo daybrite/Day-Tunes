@@ -1,12 +1,12 @@
 //! Two databases, one container (https://daybrite.dev/docs/persistence).
 //!
-//! The station catalog is the Tune Out project's own `stations.sqlite`, downloaded as
+//! The station catalog is the Tune Out project's `stations.sqlite`, downloaded as
 //! published (src/sync.rs) and ATTACHed read-only under the alias `catalog`. Its tables are
-//! read exactly as the catalog built them — the `Station` model below maps the columns this
+//! read exactly as the catalog built them: the `Station` model below maps the columns this
 //! app shows, keyed by the file's implicit rowid, and searches through the FTS5 index the
 //! catalog ships. Nothing here writes to that file; a new download replaces it whole.
 //!
-//! The listener's own data — favorites, recents, notes, tags — lives in the app's writable
+//! The listener's data (favorites, recents, notes, tags) lives in the app's writable
 //! store and names stations by the catalog's uuid, a value that survives every catalog
 //! rebuild where a rowid would not. Those are `link(…)`s: relations by value, with no foreign
 //! key, so a favorite whose station drops out of a later catalog keeps its row and shows an
@@ -23,7 +23,7 @@ pub const CATALOG_ALIAS: &str = "catalog";
 #[derive(Model, Clone, Default, PartialEq, Debug)]
 #[model(table = "stations", external = "catalog", fts("name"))]
 pub struct Station {
-    /// The file's implicit rowid — the model's key within ONE download. The FTS index is keyed
+    /// The file's implicit rowid, the model's key within one download. The FTS index is keyed
     /// by it too. Never stored by the app: user rows name a station by `uuid`.
     #[model(id, column = "rowid")]
     pub id: u64,
@@ -50,7 +50,7 @@ pub struct Station {
     pub clickcount: i64,
     /// The catalog's editorial score, `-1.0..=1.0`; higher sorts first on the Top list.
     pub curation: f64,
-    /// `community`, `public broadcaster`, `commercial`, … — the catalog's research field.
+    /// `community`, `public broadcaster`, `commercial`, …: the catalog's research field.
     #[model(column = "r_nature")]
     pub nature: String,
     /// The listener's rows about this station, by value.
@@ -157,7 +157,7 @@ pub struct Catalog {
     /// one closes (`window_shell`).
     pub generation: Signal<u64>,
     pub station_count: Signal<u64>,
-    /// The Browse lists, recomputed on every attach — the catalog is static between them.
+    /// The Browse lists, recomputed on every attach; the catalog is static between them.
     pub countries: Signal<Vec<Facet>>,
     pub tags: Signal<Vec<Facet>>,
     pub languages: Signal<Vec<Facet>>,
@@ -196,7 +196,7 @@ pub fn now_secs() -> i64 {
             .map(|d| d.as_secs() as i64)
             .unwrap_or(0)
     }
-    // The web has no std clock. A persisted counter keeps the ORDER, which is all the library
+    // The web has no std clock. A persisted counter keeps the order, which is all the library
     // asks of these times.
     #[cfg(target_arch = "wasm32")]
     {
@@ -373,7 +373,7 @@ impl Catalog {
         self.station(id)
     }
 
-    /// The uuids of `ids`, in the same order — a list's worth of stations for the player's
+    /// The uuids of `ids`, in the same order: a list's worth of stations for the player's
     /// queue, in one query rather than a fault per row.
     pub fn uuids_for(&self, ids: &[u64]) -> Vec<Vec<u8>> {
         if ids.is_empty() || !self.attached.get_untracked() {
@@ -491,7 +491,7 @@ impl Catalog {
         self.container.get::<Recent>(id).map(|r| r.station().read())
     }
 
-    /// Whether a station is favorited — a tracked read, so a heart re-draws when it flips.
+    /// Whether a station is favorited: a tracked read, so a heart re-draws when it flips.
     pub fn is_favorite(&self, uuid: &[u8]) -> bool {
         self.favorites.contains(station_id(uuid))
     }
@@ -535,7 +535,7 @@ impl Catalog {
         }
     }
 
-    /// The note on a station — created empty on first read, so the editor binds to a row.
+    /// The note on a station, created empty on first read, so the editor binds to a row.
     pub fn note(&self, uuid: &[u8]) -> Elem<Note> {
         let id = station_id(uuid);
         if let Some(n) = self.container.get::<Note>(id) {
@@ -559,7 +559,7 @@ impl Catalog {
             .live()
     }
 
-    /// Every tagging the listener has made, live — the Library filter reads the distinct
+    /// Every tagging the listener has made, live; the Library filter reads the distinct
     /// names off it.
     pub fn all_taggings(&self) -> Query<Tagging> {
         self.container

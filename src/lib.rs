@@ -58,10 +58,10 @@ pub(crate) fn has_menu_bar() -> bool {
     capability(Cap::AppMenu) != Support::Unsupported
 }
 
-/// Whether this platform has WINDOW-LEVEL chrome that persists across pages
-/// (https://daybrite.dev/docs/toolbars) — which decides whether the transport belongs there or
-/// in the Now Playing page. It no longer decides whether a command can be SHOWN: a toolbar item
-/// declared on a page rides that page's own chrome on every platform.
+/// Whether this platform has window-level chrome that persists across pages
+/// (https://daybrite.dev/docs/toolbars), which decides whether the transport belongs there or
+/// in the Now Playing page. It no longer decides whether a command can be shown: a toolbar item
+/// declared on a page rides that page's chrome on every platform.
 pub(crate) fn has_toolbar() -> bool {
     capability(Cap::Toolbar) != Support::Unsupported
 }
@@ -72,18 +72,18 @@ pub(crate) fn has_toolbar() -> bool {
 #[derive(Clone, Copy)]
 pub(crate) struct Player {
     /// The station on air, or the last one asked for: a copy of its catalog row, so the
-    /// transport and the window title need no lookup — and keep their station through a
+    /// transport and the window title need no lookup, and keep their station through a
     /// catalog update, whose rowids owe the old ones nothing.
     pub current: Signal<Option<Station>>,
     /// The stream the media piece is bound to; `load` re-reads it.
     pub url: Signal<String>,
     /// What the native player reports (https://daybrite.dev/docs/media).
     pub state: Signal<PlaybackState>,
-    /// What the stream says it is playing — the ICY `StreamTitle` or HLS ID3, parsed into
+    /// What the stream says it is playing: the ICY `StreamTitle` or HLS ID3, parsed into
     /// title / artist / album (https://daybrite.dev/docs/media). `None` until it says.
     pub track: Signal<Option<StreamMetadata>>,
     /// The stations around the one on air: the list it was started from, by uuid, so
-    /// Previous and Next step through that list — the genre, the search, the favorites.
+    /// Previous and Next step through that list (the genre, the search, the favorites).
     pub queue: Signal<Vec<Vec<u8>>>,
     /// `0.0..=1.0`, persisted.
     pub volume: Signal<f64>,
@@ -112,7 +112,7 @@ impl Player {
         }
     }
 
-    /// Start `station` from `url` — the one path every "play this" command takes. `queue` is
+    /// Start `station` from `url`, the one path every "play this" command takes. `queue` is
     /// the list the station was picked from (empty keeps the current one), for Previous and
     /// Next.
     pub fn play_station(self, station: Station, url: String, queue: Vec<Vec<u8>>) {
@@ -214,7 +214,7 @@ impl Player {
     }
 }
 
-/// Everything the PROCESS owns: the store, the catalog sync, and the player. One instance,
+/// Everything the process owns: the store, the catalog sync, and the player. One instance,
 /// created on first use, visible from every window and menu command
 /// (https://daybrite.dev/docs/state).
 #[derive(Clone, Copy)]
@@ -232,8 +232,8 @@ impl Ambient for App {
             Ok(c) => c,
             Err(e) => {
                 // An unwritable data directory is not worth a crash: an in-memory store reads
-                // the same catalog and forgets favorites at exit, which is the honest fallback
-                // and is logged as such.
+                // the same catalog and forgets favorites at exit, and that fallback is logged
+                // as such.
                 error!("could not open the store, running in memory: {e}");
                 catalog::Catalog::in_memory()
             }
@@ -246,14 +246,14 @@ impl Ambient for App {
     }
 }
 
-/// Everything ONE WINDOW owns: where it is looking (https://daybrite.dev/docs/state).
+/// Everything one window owns: where it is looking (https://daybrite.dev/docs/state).
 #[derive(Clone, Copy)]
 pub(crate) struct Scene {
     /// Which section the navigation is showing.
     pub section: Signal<Section>,
     /// The station the detail pane shows, by its rowid in the attached catalog.
     pub selected: Signal<Option<u64>>,
-    /// The list the selected station was picked from, by uuid — what the player steps
+    /// The list the selected station was picked from, by uuid: what the player steps
     /// through once that station plays.
     pub queue: Signal<Vec<Vec<u8>>>,
     /// Whether the detail is showing, on the shapes that show one pane at a time
@@ -262,7 +262,7 @@ pub(crate) struct Scene {
     /// The Browse pane's cut: 0 top, 1 countries, 2 genres, 3 languages.
     pub browse_cut: Signal<usize>,
     /// The Browse drill-down: empty at the cut's own list, one scope deep on a country, genre,
-    /// or language — a real push, with the platform's back (https://daybrite.dev/docs/navigation).
+    /// or language: a real push, with the platform's back (https://daybrite.dev/docs/navigation).
     pub browse_path: Signal<Vec<Scope>>,
     /// The Search pane's text.
     pub query: Signal<String>,
@@ -292,7 +292,7 @@ impl Ambient for Scene {
 }
 
 impl Scene {
-    /// Show `station` in the detail pane — beside the list on a wide window, pushed over it on
+    /// Show `station` in the detail pane: beside the list on a wide window, pushed over it on
     /// a narrow one; the host decides which (https://daybrite.dev/docs/navigation). `queue` is
     /// the list it was picked from.
     pub fn open_from(self, station: u64, queue: Vec<Vec<u8>>) {
@@ -312,7 +312,7 @@ impl Scene {
     }
 }
 
-/// App startup: everything that happens ONCE, however many windows open, and then the first
+/// App startup: everything that happens once, however many windows open, and then the first
 /// window's content.
 pub fn root() -> impl Piece {
     // `info!` and friends need no setup: Day installs a logger at launch.
@@ -325,7 +325,7 @@ pub fn root() -> impl Piece {
     // A real Settings window plus the App ▸ Settings… item on desktop; a fullscreen cover
     // where windows are unsupported (https://daybrite.dev/docs/windows).
     day::register_preferences(settings_body);
-    // File ▸ New Window (⌘N / Ctrl+N) and the macOS tab-bar "+": the SAME shell as the first
+    // File ▸ New Window (⌘N / Ctrl+N) and the macOS tab-bar "+": the same shell as the first
     // window. The player is app-wide, so a second window is another remote for the same
     // stream (https://daybrite.dev/docs/state).
     day::register_new_window(|| window_shell(false));
@@ -353,7 +353,7 @@ pub fn root() -> impl Piece {
     window_shell(true)
 }
 
-/// One window's UI — the first window's, and every File ▸ New Window's.
+/// One window's UI: the first window's, and every File ▸ New Window's.
 ///
 /// `primary` marks the window that owns the route namespace and carries the player itself:
 /// the media piece lives in exactly one tree, and closing that window ends playback.
@@ -395,17 +395,17 @@ fn window_shell(primary: bool) -> impl Piece {
             move || app.catalog.generation.get(),
             move |_, _| scene.clear_selection(),
         );
-        // Name the WINDOW after what it plays (https://daybrite.dev/docs/windows).
+        // Name the window after what it plays (https://daybrite.dev/docs/windows).
         day::window_title(move || {
             match player.current.with(|s| s.as_ref().map(|s| s.name.clone())) {
                 Some(name) if player.is_on_air() => name,
                 _ => res::str::app_title().format(),
             }
         });
-        // The TRANSPORT belongs to the window: it is playing whatever page is showing, so it
-        // rides the window's own chrome rather than any page's
-        // (https://daybrite.dev/docs/toolbars). The Browse cut is not here — it belongs to the
-        // Browse list's own page, which is where it is now declared (pages.rs).
+        // The transport belongs to the window: it is playing whatever page is showing, so it
+        // rides the window's chrome rather than any page's
+        // (https://daybrite.dev/docs/toolbars). The Browse cut is not here; it belongs to the
+        // Browse list's page, which is where it is now declared (pages.rs).
         let transport = move || {
             if !has_menu_bar() {
                 return Vec::new();
@@ -592,7 +592,7 @@ fn now_playing_line(app: App) -> String {
 
 /// Run a command on the window that currently has FOCUS.
 ///
-/// A desktop menu bar is ONE bar for the whole app, so its items belong to no window and cannot
+/// A desktop menu bar is one bar for the whole app, so its items belong to no window and cannot
 /// capture a `Scene`; they resolve the front one when they run (https://daybrite.dev/docs/state).
 #[allow(dead_code)]
 fn front(f: impl Fn(Scene) + 'static) -> impl Fn() + 'static {

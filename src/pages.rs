@@ -149,7 +149,7 @@ pub(crate) fn stream_url(s: &Station) -> String {
     }
 }
 
-/// `53,790` — a count with thousands grouped, without a formatting crate.
+/// `53,790`: a count with thousands grouped, without a formatting crate.
 fn grouped(n: i64) -> String {
     let digits = n.abs().to_string();
     let mut out = String::new();
@@ -189,7 +189,7 @@ pub(crate) fn short_country(name: &str) -> String {
     .to_string()
 }
 
-/// `MP3 · 128 kbps` — what a row says about the stream, minus the words nobody needs.
+/// `MP3 · 128 kbps`: what a row says about the stream, minus the words nobody needs.
 fn stream_line(codec: &str, bitrate: i64, hls: bool) -> String {
     let mut parts: Vec<String> = Vec::new();
     if hls {
@@ -204,7 +204,7 @@ fn stream_line(codec: &str, bitrate: i64, hls: bool) -> String {
     parts.join(" · ")
 }
 
-/// `🇫🇷 France · MP3 · 128 kbps` — the second line of every station row.
+/// `🇫🇷 France · MP3 · 128 kbps`: the second line of every station row.
 fn station_meta(s: &Station) -> String {
     let mut parts = Vec::new();
     if !s.country.is_empty() {
@@ -235,7 +235,7 @@ pub(crate) fn content_pane() -> impl Piece {
         when(
             move || ready() && scene.section.get() == Section::Browse,
             move || {
-                // The cut is the Browse ROOT's own control: drilling into a country pushes a
+                // The cut is the Browse root's control: drilling into a country pushes a
                 // page that declares none, so it leaves with the list it belongs to
                 // (https://daybrite.dev/docs/toolbars). It used to be a route test inside a
                 // window-wide toolbar builder.
@@ -346,11 +346,11 @@ fn sync_fraction(state: &SyncState) -> f64 {
     }
 }
 
-/// Browse: a push stack (https://daybrite.dev/docs/navigation) whose root is the cut's own
-/// list — the top stations, or the countries, genres, and languages — and whose pushed page
+/// Browse: a push stack (https://daybrite.dev/docs/navigation) whose root is the cut's
+/// list (the top stations, or the countries, genres, and languages) and whose pushed page
 /// is the stations of the country, genre, or language picked. On a phone the pushes ride the
 /// tab's navigation controller with its back button; on a desktop the pane carries a back
-/// header. The cut is chosen on the root page's own chrome, on every platform.
+/// header. The cut is chosen on the root page's chrome, on every platform.
 fn browse_pane(scene: Scene) -> impl Piece {
     nav_stack(scene.browse_path, browse_root(scene))
         .destination(move |scope: &Scope| scope_page(scene, scope.clone()))
@@ -725,8 +725,8 @@ fn library_station(app: App, id: u64) -> Option<Station> {
         .and_then(|uuid| app.catalog.station_by_uuid(&uuid))
 }
 
-/// A library row: the station a favorite or recent names, read from the catalog on every bind
-/// — the row set is small, and a station the catalog dropped still shows as such rather than
+/// A library row: the station a favorite or recent names, read from the catalog on every bind;
+/// the row set is small, and a station the catalog dropped still shows as such rather than
 /// vanishing with its note and tags.
 fn library_row(app: App, id: impl Fn() -> u64 + Copy + 'static) -> impl Piece {
     row((
@@ -778,7 +778,7 @@ fn station_list(scene: Scene, query: Query<Station>, id: &'static str) -> impl P
         station_row(app, slot)
     })
     .row_height(RowHeight::Uniform(56.0))
-    // `on_selection`, not `on_select`: only the full set can report a CLEARED selection. The
+    // `on_selection`, not `on_select`: only the full set can report a cleared selection. The
     // whole list rides along as the player's queue, so Next and Previous walk it.
     .on_selection(move |rows: Vec<Elem<Station>>| match rows.first() {
         Some(s) => {
@@ -864,7 +864,7 @@ fn station_row(app: App, slot: ModelSlot<Station>) -> impl Piece {
 /// The detail for Browse, Search, and Library: the selected station's page, or the empty state.
 ///
 /// `each` over a nought-or-one list rather than a conditional, because the page has to be
-/// rebuilt when the SELECTION changes, not merely shown and hidden.
+/// rebuilt when the selection changes, not merely shown and hidden.
 pub(crate) fn station_page() -> impl Piece {
     let scene = Scene::ambient();
     let app = App::app();
@@ -1027,7 +1027,7 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
                 .secondary()
                 .id("station-place"),
             label(s.name.clone()).font(Font::Title).id("station-name"),
-            // What the player says about THIS station while it is the one on air.
+            // What the player says about this station while it is the one on air.
             when(
                 move || player.is_current(&state_uuid),
                 move || {
@@ -1200,7 +1200,7 @@ fn state_line(state: PlaybackState) -> String {
 // --- now playing ---------------------------------------------------------------------------------
 
 /// The Now Playing section, laid out the way a music app's is: the station's art, its name
-/// and the track the stream names, and the transport — Previous, Play/Pause, Next — with the
+/// and the track the stream names, and the transport (Previous, Play/Pause, Next) with the
 /// favorite star and the volume below. On a desktop the same commands also ride the window
 /// toolbar; here is where a phone has them.
 pub(crate) fn playing_page() -> impl Piece {
@@ -1352,7 +1352,7 @@ pub(crate) fn playing_page() -> impl Piece {
         ))
         .spacing(12.0)
         .align(VAlign::Center),
-        // Where the station is and how it streams — the row's second line, here as a footnote.
+        // Where the station is and how it streams: the row's second line, here as a footnote.
         label(move || station().map(|s| station_meta(&s)).unwrap_or_default())
             .font(Font::Caption)
             .secondary()
@@ -1365,7 +1365,7 @@ pub(crate) fn playing_page() -> impl Piece {
                 button(res::str::playing_open())
                     .bordered()
                     .action(move || {
-                        // The page is keyed by the CURRENT catalog's rowid: look the station
+                        // The page is keyed by the current catalog's rowid: look the station
                         // up again rather than trusting the copy the player holds.
                         if let Some(s) = player
                             .current_uuid()
@@ -1407,7 +1407,7 @@ fn transport_glyph(
         .frame(size, size)
 }
 
-/// The station's logo, from the catalog's favicon URL — a rounded tile the size of album art.
+/// The station's logo, from the catalog's favicon URL, a rounded tile the size of album art.
 /// Built once per station (`each` above), since the fetch is one per build.
 fn artwork(player: crate::Player) -> impl Piece {
     let favicon = player
@@ -1441,7 +1441,7 @@ fn art_tile() -> impl Piece {
 // --- settings ------------------------------------------------------------------------------------
 
 /// Appearance and language, from `day-piece-settings`: persisted, applied live, and labeled
-/// from Day's own catalog (https://daybrite.dev/docs/localization) — and the station catalog:
+/// from Day's catalog (https://daybrite.dev/docs/localization), and the station catalog:
 /// what is installed, whether it is current, and where it comes from.
 pub(crate) fn settings_body() -> impl Piece {
     let app = App::app();

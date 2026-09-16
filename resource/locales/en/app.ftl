@@ -1,8 +1,8 @@
-# Day Tunes — UI strings (https://daybrite.dev/docs/localization). Add a locale by dropping a
-# sibling folder (e.g. locales/fr/app.ftl) and translating — the generated
+# Day Tunes UI strings (https://daybrite.dev/docs/localization). Add a locale by dropping a
+# sibling folder (e.g. locales/fr/app.ftl) and translating; the generated
 # res::locales::install() in src/lib.rs picks up every locale directory by itself.
 #
-# The appearance and language rows on the Settings page label THEMSELVES from Day's own catalog,
+# The appearance and language rows on the Settings page label themselves from Day's own catalog,
 # so there are no keys for them here.
 
 app_title = Day Tunes

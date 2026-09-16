@@ -1,16 +1,16 @@
 # A dayscript walkthrough (https://daybrite.dev/docs/dayscript): drives the running app by
-# element id and route, on any target. It is both the app's test and its demo — every feature
+# element id and route, on any target. It is both the app's test and its demo: every feature
 # the app ships is exercised here, in the order a listener would meet them.
 #
 #     day launch -p macos-appkit --env TUNES_CATALOG_URL=asset:catalog-fixture \
 #         --script dayscript/walkthrough.yaml
 #
-# CONTRACT: this script never depends on the network. The catalog comes from the small copy
+# This script never depends on the network. The catalog comes from the small copy
 # bundled under resource/assets/catalog-fixture (built by scripts/build-fixture.py from the
 # published file, same schema), through the same manifest-check-download-attach path a real
-# launch takes — `TUNES_CATALOG_URL` names where the manifest is. The script opens station
+# launch takes; `TUNES_CATALOG_URL` names where the manifest is. The script opens station
 # pages and presses Play, but asserts nothing about what the stream did: a CI runner may have
-# no route to a station, and the state line reports that honestly. Steps that need a window
+# no route to a station, and the state line reports what the stream did. Steps that need a window
 # toolbar or a menu bar carry `skip_on:` for the platforms that have neither.
 flow:
   # --- The catalog arrives ------------------------------------------------------------------
@@ -177,7 +177,7 @@ flow:
   - screenshot: toolbar
 
   # --- Settings -------------------------------------------------------------------------------
-  # A SECTION on the phones; on a desktop it is a real Settings window reached from the App
+  # A section on the phones; on a desktop it is a real Settings window reached from the App
   # menu, so the route does not exist there (https://daybrite.dev/docs/windows). The catalog
   # section says what is installed and lets the listener check for an update.
   - navigate: { route: settings, skip_on: [appkit, gtk, qt, xaml] }
