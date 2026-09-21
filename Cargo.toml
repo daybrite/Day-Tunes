@@ -1,6 +1,6 @@
 [package]
 name = "day-tunes"
-version = "0.1.1"
+version.workspace = true
 edition = "2024"
 license = "Apache-2.0"
 description = "Internet radio: browse, search, and listen to the Tune Out catalog on every platform."
@@ -47,3 +47,6 @@ day-build = { git = "https://github.com/daybrite/day.git" }
 
 
 [workspace]
+
+[workspace.package]
+version = "0.1.1"
