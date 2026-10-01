@@ -17,6 +17,7 @@ qt = ["day/qt", "day-piece-remote-image/qt"]
 uikit = ["day/uikit", "day-piece-remote-image/uikit"]
 mdc = ["day/mdc", "day-piece-remote-image/mdc"]
 xaml = ["day/xaml", "day-piece-remote-image/xaml"]
+winui = ["day/winui", "day-piece-remote-image/winui"]
 # The remote image has no ArkUI or web arm; the artwork falls back to the placeholder there.
 arkui = ["day/arkui"]
 dom = ["day/dom"]

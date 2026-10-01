@@ -6,7 +6,7 @@ schema = 1
 id = "dev.daybrite.tunes"
 title = "Day Tunes"
 build = 5
-targets = ["macos-appkit", "macos-gtk", "macos-qt", "ios-uikit", "android-mdc", "linux-gtk", "linux-qt", "windows-xaml", "windows-gtk", "windows-qt", "harmony-arkui", "web-dom"]
+targets = ["macos-appkit", "macos-gtk", "macos-qt", "ios-uikit", "android-mdc", "linux-gtk", "linux-qt", "windows-winui", "windows-xaml", "windows-gtk", "windows-qt", "harmony-arkui", "web-dom"]
 
 # The window's geometry in points (https://daybrite.dev/docs/size-classes). `width`/`height` are
 # the desktop default and the size a desktop-windowing Android window opens at; the minimum is
