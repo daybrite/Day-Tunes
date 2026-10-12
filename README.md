@@ -54,10 +54,10 @@ you build or launch:
 
 ```sh
 day doctor
-day launch -p macos-appkit
-day launch -p ios-uikit          # needs a booted Simulator
-day launch -p android-mdc        # needs a JDK and a running emulator or device
-day launch -p web-dom            # serves the WebAssembly build locally
+day launch -t macos-appkit
+day launch -t ios-uikit          # needs a booted Simulator
+day launch -t android-mdc        # needs a JDK and a running emulator or device
+day launch -t web-dom            # serves the WebAssembly build locally
 cargo test                      # catalog and manifest unit tests
 ```
 
@@ -75,7 +75,7 @@ The [walkthrough](dayscript/walkthrough.yaml) exercises browsing, search, the li
 and playback controls, and captures screenshots. Run it with the bundled catalog fixture:
 
 ```sh
-day launch -p macos-appkit --env TUNES_CATALOG_URL=asset:catalog-fixture \
+day launch -t macos-appkit --env TUNES_CATALOG_URL=asset:catalog-fixture \
   --script dayscript/walkthrough.yaml
 ```
 
@@ -88,7 +88,7 @@ instance so they do not modify the same library.
 checks that the catalog, a favorite, and a note survive a reload with catalog requests blocked:
 
 ```sh
-day build -p web-dom
+day build -t web-dom
 node scripts/test-web-storage.mjs
 ```
 
@@ -126,3 +126,14 @@ server supplies; remote catalog servers must also allow CORS.
 Day Tunes is open source under the Apache-2.0 license. The
 [Tune Out catalog](https://github.com/Tune-Out/stations) and the bundled catalog fixture are
 public domain (CC0).
+
+
+## Generated native projects
+
+Use a Day CLI with automatic native project generation; Apple builds require **Xcode 27
+or newer**. Xcode project documents, Android Gradle files, and HarmonyOS hvigor files are
+created under `build/` by `day prepare`, `day build`, and `day launch`. Open the selected
+project with `day open -t <target>`; edits to generated files are disposable. Apple Swift
+sources, plists and `.xcconfig` files, and any Android resource overlays, remain app-owned
+under `platform/`. For additional native configuration, use
+`day project add-target <target> --persist-native-project` to create a persistent override.

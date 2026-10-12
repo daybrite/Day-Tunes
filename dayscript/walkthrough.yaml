@@ -2,7 +2,7 @@
 # element id and route, on any target. It is both the app's test and its demo: every feature
 # the app ships is exercised here, in the order a listener would meet them.
 #
-#     day launch -p macos-appkit --env TUNES_CATALOG_URL=asset:catalog-fixture \
+#     day launch -t macos-appkit --env TUNES_CATALOG_URL=asset:catalog-fixture \
 #         --script dayscript/walkthrough.yaml
 #
 # This script never depends on the network. The catalog comes from the small copy

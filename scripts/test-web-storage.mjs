@@ -1,5 +1,5 @@
 // Exercise the real browser store: reload with catalog requests blocked and check saved data.
-// Run after `day build -p web-dom`. Playwright is resolved like Day's browser driver.
+// Run after `day build -t web-dom`. Playwright is resolved like Day's browser driver.
 import { createRequire } from 'node:module';
 import fs from 'node:fs/promises';
 import http from 'node:http';
