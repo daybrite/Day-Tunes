@@ -12,8 +12,9 @@
 //! key, so a favorite whose station drops out of a later catalog keeps its row and shows an
 //! empty link rather than vanishing.
 
-use day::persistence::{DbError, Fetch, Linked, ModelContainer, Pred, Query, Sqlite, Value, rank};
 use day::prelude::*;
+use day_persistence::prelude::*;
+use day_persistence::{DbError, Fetch, Linked, ModelContainer, Pred, Query, Sqlite, Value, rank};
 
 /// The alias the catalog file is attached under; every external model's table is `catalog.…`.
 pub const CATALOG_ALIAS: &str = "catalog";

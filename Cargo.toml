@@ -31,7 +31,8 @@ crate-type = ["rlib"]
 
 [dependencies]
 # The listener's store, with the downloaded catalog attached to it (src/catalog.rs).
-day = { git = "https://github.com/daybrite/day.git", features = ["persistence"] }
+day = { git = "https://github.com/daybrite/day.git", features = ["model"] }
+day-persistence = { git = "https://github.com/daybrite/day.git" }
 # The stream player: sound only, driven by the app's own transport (src/lib.rs).
 day-piece-media = { git = "https://github.com/daybrite/day-piece-media.git" }
 day-piece-settings = { git = "https://github.com/daybrite/day.git" }

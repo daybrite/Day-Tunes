@@ -10,8 +10,8 @@ use crate::catalog::{
 };
 use crate::sync::{DEFAULT_BASE, SyncState};
 use crate::{App, Scene, Section, has_toolbar, res};
-use day::persistence::Query;
 use day::prelude::*;
+use day_persistence::Query;
 use day_piece_media::PlaybackState;
 use day_piece_remote_image::remote_image_url;
 use std::rc::Rc;

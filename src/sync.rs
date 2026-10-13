@@ -106,7 +106,7 @@ struct Paths {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn paths() -> Result<Paths, String> {
-    let root = day::persistence::Sqlite::app_data_dir().map_err(|e| e.to_string())?;
+    let root = day_persistence::Sqlite::app_data_dir().map_err(|e| e.to_string())?;
     let dir = root.join("tunes-catalog");
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     Ok(Paths {
@@ -174,7 +174,7 @@ impl Sync {
             return;
         };
         let name = web_catalog_name(&manifest);
-        if day::persistence::Sqlite::web_storage().is_ok_and(|storage| storage.exists(&name)) {
+        if day_persistence::Sqlite::web_storage().is_ok_and(|storage| storage.exists(&name)) {
             match catalog.attach(std::path::Path::new(&name)) {
                 Ok(()) => self.installed.set(Some(manifest)),
                 Err(error) => error!("could not attach the browser catalog: {error}"),
@@ -190,7 +190,7 @@ impl Sync {
             return Err("the manifest has no valid SHA-256 for the catalog".into());
         }
         let name = web_catalog_name(&manifest);
-        let storage = day::persistence::Sqlite::web_storage().map_err(|e| e.to_string())?;
+        let storage = day_persistence::Sqlite::web_storage().map_err(|e| e.to_string())?;
         if self
             .installed
             .get_untracked()
