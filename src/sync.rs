@@ -18,6 +18,7 @@ use day::prelude::*;
 use day_part_http::Request;
 #[cfg(not(target_arch = "wasm32"))]
 use day_part_http::{Download, HttpError, StreamSink, fetch_streamed};
+use day_piece_settings::Pref;
 use serde::Deserialize;
 #[cfg(not(target_arch = "wasm32"))]
 use std::io::Write;
@@ -28,8 +29,9 @@ use std::sync::{Arc, Mutex};
 
 /// Where the catalog is published.
 pub const DEFAULT_BASE: &str = "https://tune-out.app/data/";
-/// The Settings override's `day::prefs` key (empty = the default).
-pub const BASE_KEY: &str = "catalog.base";
+/// The Settings override (the Source row, https://daybrite.dev/docs/settings); empty = the
+/// default.
+pub static BASE: Pref<String> = Pref::new("catalog.base", String::new);
 /// The launch-time override, for scripts: `TUNES_CATALOG_URL=asset:catalog-fixture`.
 pub const BASE_ENV: &str = "TUNES_CATALOG_URL";
 
@@ -90,8 +92,9 @@ pub struct Sync {
     pub installed: Signal<Option<Manifest>>,
     /// The base URL in use (the override, else the default).
     pub base: Signal<String>,
-    /// Whether a check or download is in flight, so a second "Check now" waits.
-    busy: Signal<bool>,
+    /// Whether a check or download is in flight: a second check waits, and the Settings
+    /// action shows it.
+    pub busy: Signal<bool>,
 }
 
 /// Where the copy lives: a directory of its own under the app's data root (which the
@@ -121,7 +124,7 @@ impl Sync {
     pub fn new() -> Sync {
         let base = day::env(BASE_ENV)
             .filter(|s| !s.is_empty())
-            .or_else(|| day::prefs::get(BASE_KEY).filter(|s| !s.is_empty()))
+            .or_else(|| Some(BASE.get_untracked()).filter(|s| !s.is_empty()))
             .unwrap_or_else(|| DEFAULT_BASE.to_string());
         Sync {
             state: Signal::new(SyncState::Idle),
@@ -131,11 +134,10 @@ impl Sync {
         }
     }
 
-    /// Point at another publisher, from Settings. Empty restores the default. Takes effect on
-    /// the next check.
+    /// Point at another publisher: what the Source row wrote to [`BASE`] (lib.rs watches it).
+    /// Empty restores the default. Takes effect on the next check.
     pub fn set_base(self, base: &str) {
         let base = base.trim();
-        day::prefs::set(BASE_KEY, base);
         self.base.set(if base.is_empty() {
             DEFAULT_BASE.to_string()
         } else {

@@ -177,15 +177,23 @@ flow:
   - screenshot: toolbar
 
   # --- Settings -------------------------------------------------------------------------------
-  # A section on the phones; on a desktop it is a real Settings window reached from the App
-  # menu, so the route does not exist there (https://daybrite.dev/docs/windows). The catalog
-  # section says what is installed and lets the listener check for an update.
-  - navigate: { route: settings, skip_on: [appkit, gtk, qt, xaml] }
-  - assert_visible: { id: language-picker, skip_on: [appkit, gtk, qt, xaml] }
-  - assert_visible: { id: catalog-installed, skip_on: [appkit, gtk, qt, xaml] }
-  - tap: { id: catalog-check, skip_on: [appkit, gtk, qt, xaml] }
-  - wait_idle: { skip_on: [appkit, gtk, qt, xaml] }
-  - screenshot: { name: settings, skip_on: [appkit, gtk, qt, xaml] }
+  # The shared surface (https://daybrite.dev/docs/settings): a window the App menu opens on a
+  # desktop, a section of the navigation on the phones. `settings` reaches the General page on
+  # both; `settings/catalog` pushes the Station catalog page on a phone, which says what is
+  # installed and lets the listener check for an update. (A desktop shows that group as the
+  # window's second tab, which no route this app declares can select, so the check runs on the
+  # phones only.)
+  - navigate: { route: settings }
+  - navigate: { route: settings/general, only_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: language-picker }
+  - screenshot: { name: settings, window: day.preferences, skip_on: [uikit, mdc, arkui, dom] }
+  - screenshot: { name: settings, only_on: [uikit, mdc, arkui, dom] }
+  - close_window: { window: day.preferences, skip_on: [uikit, mdc, arkui, dom] }
+  - navigate: { route: settings/catalog, only_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: catalog-installed, only_on: [uikit, mdc, arkui, dom] }
+  - tap: { id: catalog-check, only_on: [uikit, mdc, arkui, dom] }
+  - wait_idle: { only_on: [uikit, mdc, arkui, dom] }
+  - screenshot: { name: settings-catalog, only_on: [uikit, mdc, arkui, dom] }
 
   # Tidy: the tag and the favorite come off again, so a second run on the same store starts
   # where this one did. Through Browse, since the Library empties as the favorite goes.

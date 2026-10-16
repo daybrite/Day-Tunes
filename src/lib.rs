@@ -8,6 +8,7 @@
 
 use day::prelude::*;
 use day_piece_media::{PlaybackState, StreamMetadata, media};
+use day_piece_settings::prelude::*;
 
 mod catalog;
 mod pages;
@@ -27,6 +28,8 @@ pub fn window() -> day::WindowOptions {
         title_fn: Some(|| res::str::app_title().format()),
         // A desktop default; mobile fills the screen regardless.
         size: day::prelude::Size::new(1100.0, 700.0),
+        // Named in Day's exit line and the About fallback (https://daybrite.dev/docs/lifecycle).
+        version: Some(env!("CARGO_PKG_VERSION").into()),
         ..Default::default()
     }
 }
@@ -34,9 +37,6 @@ pub fn window() -> day::WindowOptions {
 // Typed constants for everything under `resource/` (https://daybrite.dev/docs/resources).
 day::resources!();
 
-/// The settings' `day::prefs` keys: read at startup, written by the Settings page.
-const THEME_KEY: &str = "app.theme";
-const LOCALE_KEY: &str = "app.locale";
 /// The volume slider's `day::prefs` key.
 const VOLUME_KEY: &str = "app.volume";
 
@@ -52,8 +52,8 @@ day::routes! {
     }
 }
 
-/// Whether this platform has a menu bar; there, Settings lives in the App menu instead of the
-/// navigation (https://daybrite.dev/docs/menus).
+/// Whether this platform has a menu bar (https://daybrite.dev/docs/menus): the desktop shape,
+/// where the transport rides the window's toolbar.
 pub(crate) fn has_menu_bar() -> bool {
     capability(Cap::AppMenu) != Support::Unsupported
 }
@@ -317,21 +317,30 @@ impl Scene {
 pub fn root() -> impl Piece {
     // `info!` and friends need no setup: Day installs a logger at launch.
     info!("Day Tunes starting");
-    // Re-apply the saved theme and language before anything is built.
-    day_piece_settings::apply_startup(THEME_KEY, LOCALE_KEY);
     // Where `.restore("app.section")` keeps the last section between launches.
     day::prefs::install_nav_store();
 
-    // A real Settings window plus the App ▸ Settings… item on desktop; a fullscreen cover
-    // where windows are unsupported (https://daybrite.dev/docs/windows).
-    day::register_preferences(settings_body);
+    let app = App::app();
+    // Settings and About (https://daybrite.dev/docs/settings): appearance and language from
+    // Day's catalog, the Station catalog group (pages.rs), the app's name and version from
+    // Day.toml. A desktop gets the App menu's Settings… and About items and their windows; a
+    // phone the Settings section of the navigation in `window_shell`.
+    let prefs = Preferences::new()
+        .about(About::from_manifest().link(day::tr("day-about-website"), "https://daybrite.dev"))
+        .group(general_group(res::locales::ALL))
+        .group(catalog_group(app))
+        .install();
+    // The Source row edits the pref as the listener types; the sync reads it at the next check.
+    sync::BASE.watch(move |base| app.sync.set_base(base));
     // File ▸ New Window (⌘N / Ctrl+N) and the macOS tab-bar "+": the same shell as the first
     // window. The player is app-wide, so a second window is another remote for the same
     // stream (https://daybrite.dev/docs/state).
-    day::register_new_window(|| window_shell(false));
+    day::register_new_window({
+        let prefs = prefs.clone();
+        move || window_shell(false, prefs.clone())
+    });
     app_menu(menus());
 
-    let app = App::app();
     // The volume outlives every window, so its persistence is installed once, here.
     let player = app.player;
     watch(
@@ -350,14 +359,14 @@ pub fn root() -> impl Piece {
         app.sync.check(app.catalog);
     });
 
-    window_shell(true)
+    window_shell(true, prefs)
 }
 
 /// One window's UI: the first window's, and every File ▸ New Window's.
 ///
 /// `primary` marks the window that owns the route namespace and carries the player itself:
 /// the media piece lives in exactly one tree, and closing that window ends playback.
-fn window_shell(primary: bool) -> impl Piece {
+fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
     Scene::scoped(move |scene| {
         let app = App::app();
         let player = app.player;
@@ -509,14 +518,12 @@ fn window_shell(primary: bool) -> impl Piece {
                 station_page,
             )
             .icon_tint(Color::hex(0xEF4444))
-            // Settings is a row only where there is no menu bar (see `has_menu_bar`).
+            // Use the desktop's App menu Settings… item; without a menu bar, keep Settings
+            // reachable as a navigation section (https://daybrite.dev/docs/settings).
             .items(
-                move || {
-                    if has_menu_bar() {
-                        Vec::new()
-                    } else {
-                        vec![Section::Settings]
-                    }
+                {
+                    let prefs = prefs.clone();
+                    move || prefs.nav_keys(Section::Settings)
                 },
                 |s: &Section| {
                     item(*s, res::str::nav_settings())
@@ -524,7 +531,7 @@ fn window_shell(primary: bool) -> impl Piece {
                         .icon_tint(Color::hex(0x6B7280))
                 },
             )
-            .destination(|_: &Section| settings_page())
+            .destination(move |_: &Section| prefs.page())
             .id("nav");
         // Only the first window joins the route namespace and restores where it left off.
         let nav = if primary {

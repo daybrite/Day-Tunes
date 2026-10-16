@@ -8,12 +8,13 @@
 use crate::catalog::{
     Facet, NoteFields, Scope, Station, StationFields, StreamRow, flag, station_id,
 };
-use crate::sync::{DEFAULT_BASE, SyncState};
+use crate::sync::{BASE, DEFAULT_BASE, SyncState};
 use crate::{App, Scene, Section, has_toolbar, res};
 use day::prelude::*;
 use day_persistence::Query;
 use day_piece_media::PlaybackState;
 use day_piece_remote_image::remote_image_url;
+use day_piece_settings::prelude::*;
 use std::rc::Rc;
 
 /// The accent the station rows and chips share.
@@ -1440,50 +1441,36 @@ fn art_tile() -> impl Piece {
 
 // --- settings ------------------------------------------------------------------------------------
 
-/// Appearance and language, from `day-piece-settings`: persisted, applied live, and labeled
-/// from Day's catalog (https://daybrite.dev/docs/localization), and the station catalog:
-/// what is installed, whether it is current, and where it comes from.
-pub(crate) fn settings_body() -> impl Piece {
-    let app = App::app();
+/// The Station catalog group of Settings (https://daybrite.dev/docs/settings): what is
+/// installed, whether it is current, where it comes from, and a check on demand. Appearance and
+/// language are Day's own General group (lib.rs).
+pub(crate) fn catalog_group(app: App) -> Group {
     let sync = app.sync;
-    // The publisher override, edited here and read at the next check.
-    let base = Signal::new(day::prefs::get(crate::sync::BASE_KEY).unwrap_or_default());
-    watch(
-        move || base.get(),
-        move |b, previous| {
-            if previous.is_some() {
-                sync.set_base(b);
-            }
-        },
-    );
-    form((
-        day_piece_settings::settings_sections(
-            crate::THEME_KEY,
-            crate::LOCALE_KEY,
-            res::locales::ALL,
-        ),
-        section((
-            labeled(
-                res::str::catalog_installed(),
-                label(move || installed_line(app)).id("catalog-installed"),
-            ),
-            labeled(
-                res::str::catalog_status(),
-                label(move || sync_line(&sync.state.get())).id("catalog-status"),
-            ),
-            labeled(
-                res::str::catalog_source(),
-                text_field(base)
-                    .placeholder(DEFAULT_BASE)
-                    .id("catalog-source"),
-            ),
-            button(res::str::catalog_check())
-                .bordered()
-                .action(move || sync.check(app.catalog))
+    Group::new("catalog", res::str::catalog_section())
+        .icon(res::vectors::radio)
+        .subtitle(move || sync_line(&sync.state.get()))
+        .row(
+            rows::info(res::str::catalog_installed(), move || installed_line(app))
+                .id("catalog-installed"),
+        )
+        .row(
+            rows::info(res::str::catalog_status(), move || {
+                sync_line(&sync.state.get())
+            })
+            .id("catalog-status"),
+        )
+        // The publisher override: every edit persists, and the sync reads it at the next check.
+        .row(
+            rows::text(&BASE, res::str::catalog_source())
+                .placeholder(DEFAULT_BASE)
+                .caption(res::str::catalog_source_hint())
+                .id("catalog-source"),
+        )
+        .row(
+            rows::action(res::str::catalog_check(), move || sync.check(app.catalog))
+                .busy(sync.busy)
                 .id("catalog-check"),
-        ))
-        .title(res::str::catalog_section()),
-    ))
+        )
 }
 
 /// `48,205 stations, published 2026-06-23`, from the manifest beside the copy.
@@ -1498,24 +1485,4 @@ fn installed_line(app: App) -> String {
         }
         None => res::str::catalog_none().format(),
     }
-}
-
-/// The same body as a navigable section, for the platforms with no menu bar.
-pub(crate) fn settings_page() -> impl Piece {
-    column((
-        label(res::str::nav_settings())
-            .font(Font::Title)
-            .id("settings-title"),
-        settings_body(),
-    ))
-    .spacing(12.0)
-    .align(HAlign::Leading)
-    .padding(16.0)
-}
-
-/// The catalog source's hint is a Fluent string the field does not use: the URL itself is the
-/// placeholder, which reads better than prose in a URL field. Named so `day lint` sees it used.
-#[allow(dead_code)]
-fn _source_hint() -> LocalizedText {
-    res::str::catalog_source_hint()
 }
