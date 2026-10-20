@@ -416,15 +416,15 @@ fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
             let has_station = player.current_uuid().is_some();
             let fav = player.is_favorite();
             vec![
-                toolbar_label("tb-now", move || now_playing_line(app))
+                toolbar_label(day::id!(tb_now), move || now_playing_line(app))
                     .placement(ToolbarPlacement::Principal),
-                toolbar_button("tb-previous", res::str::playing_previous())
+                toolbar_button(day::id!(tb_previous), res::str::playing_previous())
                     .image(res::vectors::skip_previous)
                     .tooltip(res::str::playing_previous())
                     .enabled(player.has_previous())
                     .action(move || player.step(-1)),
                 toolbar_button(
-                    "tb-play",
+                    day::id!(tb_play),
                     if on_air {
                         res::str::cmd_pause()
                     } else {
@@ -439,18 +439,18 @@ fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
                 })
                 .enabled(has_station)
                 .action(move || player.toggle()),
-                toolbar_button("tb-next", res::str::playing_next())
+                toolbar_button(day::id!(tb_next), res::str::playing_next())
                     .image(res::vectors::skip_next)
                     .tooltip(res::str::playing_next())
                     .enabled(player.has_next())
                     .action(move || player.step(1)),
-                toolbar_button("tb-stop", res::str::cmd_stop())
+                toolbar_button(day::id!(tb_stop), res::str::cmd_stop())
                     .icon(Symbol::Stop)
                     .tooltip(res::str::cmd_stop())
                     .enabled(has_station)
                     .action(move || player.stop.notify()),
                 toolbar_button(
-                    "tb-favorite",
+                    day::id!(tb_favorite),
                     if fav {
                         res::str::cmd_unfavorite()
                     } else {
@@ -509,7 +509,7 @@ fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
                         .icon_tint(Color::hex(0x6B7280))
                 }),
             ))
-            .id("nav");
+            .id(day::id!(nav));
         // Only the first window joins the route namespace and restores where it left off.
         let nav = if primary {
             nav.restore("app.section")
@@ -533,7 +533,7 @@ fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
                     .load(player.load)
                     .state(player.state)
                     .metadata(player.track)
-                    .id("player"),
+                    .id(day::id!(player)),
             ))
             .any()
         } else {

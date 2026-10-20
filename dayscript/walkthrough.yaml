@@ -20,33 +20,33 @@ flow:
   - wait_for: { id: nav, within: 60 }
   - navigate: { route: browse }
   - assert_route: { route: browse }
-  - wait_for: { id: browse-list, within: 60 }
+  - wait_for: { id: browse_list, within: 60 }
   - screenshot: browse
 
   # Selecting a row opens its page: beside the list on a desktop, pushed over it on a phone.
-  - select: { id: browse-list, index: 0 }
-  - wait_for: { id: station-name }
-  - assert_visible: { id: station-play }
-  - assert_visible: { id: station-favorite }
+  - select: { id: browse_list, index: 0 }
+  - wait_for: { id: station_name }
+  - assert_visible: { id: station_play }
+  - assert_visible: { id: station_favorite }
   - screenshot: station
 
   # Play. The state line appears for the station on air whatever the stream does.
-  - tap: { id: station-play }
-  - wait_for: { id: station-state }
+  - tap: { id: station_play }
+  - wait_for: { id: station_state }
   - pause: { secs: 3 }
   - screenshot: playing-station
 
   # Favorite it, so the Library has something to show below.
-  - tap: { id: station-favorite }
+  - tap: { id: station_favorite }
   - wait_idle: {}
 
   # The listener's own words: a note, and a tag the Library can filter by. Both live in the
   # app's store beside the downloaded catalog, keyed by the station's uuid.
-  - input: { id: station-note, text: "Good in the morning." }
+  - input: { id: station_note, text: "Good in the morning." }
   - wait_idle: {}
-  - input: { id: station-tag-field, text: "morning" }
-  - tap: { id: station-tag-add }
-  - wait_for: { id: station-user-tag-morning }
+  - input: { id: station_tag_field, text: "morning" }
+  - tap: { id: station_tag_add }
+  - wait_for: { id: station_user_tag:morning }
   - screenshot: station-notes
 
   # Back to the list on the shapes that pushed the page; a wide window has both and passes.
@@ -58,68 +58,68 @@ flow:
   # The cut is a segmented control: in the window toolbar where the toolkit places the station
   # list in a pane of its own, and the page toolbar on other targets. A pick pushes the cut's stations as a real page, so the platform's back returns
   # to the cut (https://daybrite.dev/docs/navigation).
-  - toolbar: { item: tb-cut, index: 1 }
-  - wait_for: { id: country-list }
+  - toolbar: { item: tb_cut, index: 1 }
+  - wait_for: { id: country_list }
   - screenshot: countries
-  - select: { id: country-list, index: 0 }
-  - wait_for: { id: browse-list }
+  - select: { id: country_list, index: 0 }
+  - wait_for: { id: browse_list }
   - screenshot: country
   - nav_back: {}
-  - wait_for: { id: country-list }
-  - toolbar: { item: tb-cut, index: 2 }
-  - wait_for: { id: tag-list }
+  - wait_for: { id: country_list }
+  - toolbar: { item: tb_cut, index: 2 }
+  - wait_for: { id: tag_list }
   - screenshot: genres
-  - select: { id: tag-list, index: 0 }
-  - wait_for: { id: browse-list }
+  - select: { id: tag_list, index: 0 }
+  - wait_for: { id: browse_list }
   - screenshot: genre
   - nav_back: {}
-  - wait_for: { id: tag-list }
-  - toolbar: { item: tb-cut, index: 3 }
-  - wait_for: { id: language-list }
-  - select: { id: language-list, index: 0 }
-  - wait_for: { id: browse-list }
+  - wait_for: { id: tag_list }
+  - toolbar: { item: tb_cut, index: 3 }
+  - wait_for: { id: language_list }
+  - select: { id: language_list, index: 0 }
+  - wait_for: { id: browse_list }
   - nav_back: {}
-  - wait_for: { id: language-list }
-  - toolbar: { item: tb-cut, index: 0 }
-  - wait_for: { id: browse-list }
+  - wait_for: { id: language_list }
+  - toolbar: { item: tb_cut, index: 0 }
+  - wait_for: { id: browse_list }
 
   # --- Search ---------------------------------------------------------------------------------
   - navigate: { route: search }
   - assert_route: { route: search }
-  - wait_for: { id: search-field }
-  - assert_visible: { id: search-hint }
-  - input: { id: search-field, text: "jazz" }
+  - wait_for: { id: search_field }
+  - assert_visible: { id: search_hint }
+  - input: { id: search_field, text: "jazz" }
   - wait_idle: {}
-  - wait_for: { id: search-list }
+  - wait_for: { id: search_list }
   - screenshot: search
-  - select: { id: search-list, index: 0 }
-  - wait_for: { id: station-name }
+  - select: { id: search_list, index: 0 }
+  - wait_for: { id: station_name }
   - screenshot: search-station
   - nav_back: { only_on: [uikit, mdc, arkui] }
   - wait_idle: { only_on: [uikit, mdc, arkui] }
   # A search with no matches says so rather than showing an empty pane.
-  - input: { id: search-field, text: "zzzzqqqqxxxx" }
+  - input: { id: search_field, text: "zzzzqqqqxxxx" }
   - wait_idle: {}
-  - wait_for: { id: search-none }
-  - input: { id: search-field, text: "" }
+  - wait_for: { id: search_none }
+  - input: { id: search_field, text: "" }
   - wait_idle: {}
 
   # --- Library --------------------------------------------------------------------------------
   - navigate: { route: library }
   - assert_route: { route: library }
-  - wait_for: { id: library-list }
+  - wait_for: { id: library_list }
   - screenshot: favorites
   # The tag filter appears once there is a tag; the favorite above carries "morning".
-  - wait_for: { id: library-tag }
-  - select: { id: library-tag, index: 1 }
+  - wait_for: { id: library_tag }
+  - select: { id: library_tag, index: 1 }
   - wait_idle: {}
   - screenshot: favorites-tagged
-  - select: { id: library-tag, index: 0 }
+  - select: { id: library_tag, index: 0 }
   - wait_idle: {}
-  - select: { id: library-cut, index: 1 }
+  - select: { id: library_cut, index: 1 }
   - wait_idle: {}
   - screenshot: recents
-  - select: { id: library-cut, index: 0 }
+  - select: { id: library_cut, index: 0 }
   - wait_idle: {}
 
   # --- Now Playing ----------------------------------------------------------------------------
@@ -127,24 +127,24 @@ flow:
   # here), the star favorites it, the volume is one slider.
   - navigate: { route: playing }
   - assert_route: { route: playing }
-  - wait_for: { id: playing-name }
-  - assert_visible: { id: playing-toggle }
-  - assert_visible: { id: playing-volume }
-  - set_value: { id: playing-volume, value: 0.5 }
+  - wait_for: { id: playing_name }
+  - assert_visible: { id: playing_toggle }
+  - assert_visible: { id: playing_volume }
+  - set_value: { id: playing_volume, value: 0.5 }
   - screenshot: now-playing
-  - tap: { id: playing-next }
+  - tap: { id: playing_next }
   - wait_idle: {}
   - pause: { secs: 2 }
   - screenshot: now-playing-next
-  - tap: { id: playing-previous }
+  - tap: { id: playing_previous }
   - wait_idle: {}
   # Pause, then start the same station over from the transport.
-  - tap: { id: playing-toggle }
+  - tap: { id: playing_toggle }
   - wait_idle: {}
-  - tap: { id: playing-toggle }
+  - tap: { id: playing_toggle }
   - wait_idle: {}
   - pause: { secs: 2 }
-  - tap: { id: playing-stop }
+  - tap: { id: playing_stop }
   - wait_idle: {}
 
   # --- Adaptive navigation --------------------------------------------------------------------
@@ -164,15 +164,15 @@ flow:
   # --- The desktop transport ------------------------------------------------------------------
   # Play/pause and Stop in the window toolbar, and the same commands in the Playback menu.
   - navigate: { route: browse }
-  - select: { id: browse-list, index: 1 }
-  - wait_for: { id: station-play }
-  - tap: { id: station-play }
+  - select: { id: browse_list, index: 1 }
+  - wait_for: { id: station_play }
+  - tap: { id: station_play }
   - wait_idle: {}
-  - toolbar: { item: tb-play, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
+  - toolbar: { item: tb_play, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
   - wait_idle: {}
-  - toolbar: { item: tb-next, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
+  - toolbar: { item: tb_next, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
   - wait_idle: {}
-  - toolbar: { item: tb-stop, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
+  - toolbar: { item: tb_stop, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
   - wait_idle: {}
   - screenshot: toolbar
 
@@ -185,31 +185,31 @@ flow:
   # phones only.)
   - navigate: { route: settings }
   - navigate: { route: settings/general, only_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: language-picker }
+  - wait_for: { id: language_picker }
   - screenshot: { name: settings, window: day.preferences, skip_on: [uikit, mdc, arkui, dom] }
   - screenshot: { name: settings, only_on: [uikit, mdc, arkui, dom] }
   - close_window: { window: day.preferences, skip_on: [uikit, mdc, arkui, dom] }
   - navigate: { route: settings/catalog, only_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: catalog-installed, only_on: [uikit, mdc, arkui, dom] }
-  - tap: { id: catalog-check, only_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: catalog_installed, only_on: [uikit, mdc, arkui, dom] }
+  - tap: { id: catalog_check, only_on: [uikit, mdc, arkui, dom] }
   - wait_idle: { only_on: [uikit, mdc, arkui, dom] }
   - screenshot: { name: settings-catalog, only_on: [uikit, mdc, arkui, dom] }
 
   # Tidy: the tag and the favorite come off again, so a second run on the same store starts
   # where this one did. Through Browse, since the Library empties as the favorite goes.
   - navigate: { route: browse }
-  - wait_for: { id: browse-list }
-  - select: { id: browse-list, index: 0 }
-  - wait_for: { id: station-user-tag-morning }
-  - tap: { id: station-user-tag-morning }
+  - wait_for: { id: browse_list }
+  - select: { id: browse_list, index: 0 }
+  - wait_for: { id: station_user_tag:morning }
+  - tap: { id: station_user_tag:morning }
   - wait_idle: {}
-  - tap: { id: station-favorite }
+  - tap: { id: station_favorite }
   - wait_idle: {}
   - nav_back: { only_on: [uikit, mdc, arkui] }
   - wait_idle: { only_on: [uikit, mdc, arkui] }
 
   # Leave the app quiet: nothing streaming after the walkthrough.
   - navigate: { route: playing }
-  - wait_for: { id: playing-stop }
-  - tap: { id: playing-stop }
+  - wait_for: { id: playing_stop }
+  - tap: { id: playing_stop }
   - wait_idle: {}

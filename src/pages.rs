@@ -253,7 +253,7 @@ pub(crate) fn content_pane() -> impl Piece {
                             }
                             vec![
                                 toolbar_segmented(
-                                    "tb-cut",
+                                    day::id!(tb_cut),
                                     vec![
                                         segment(res::str::browse_top()),
                                         segment(res::str::browse_countries()),
@@ -292,19 +292,19 @@ fn catalog_panel(app: App) -> impl Piece {
         label(res::str::catalog_fetching())
             .font(Font::Title3)
             .align(TextAlign::Center)
-            .id("catalog-title"),
+            .id(day::id!(catalog_title)),
         label(move || sync_line(&sync.state.get()))
             .font(Font::Caption)
             .secondary()
             .align(TextAlign::Center)
             .max_width(320.0)
-            .id("catalog-state"),
+            .id(day::id!(catalog_state)),
         when(
             move || matches!(sync.state.get(), SyncState::Downloading { .. }),
             move || {
                 progress(move || sync_fraction(&sync.state.get()))
                     .frame(240.0, 8.0)
-                    .id("catalog-progress")
+                    .id(day::id!(catalog_progress))
             },
         ),
         when(
@@ -313,7 +313,7 @@ fn catalog_panel(app: App) -> impl Piece {
                 button(res::str::catalog_retry())
                     .prominent()
                     .action(move || sync.check(app.catalog))
-                    .id("catalog-retry")
+                    .id(day::id!(catalog_retry))
             },
         ),
         spacer(),
@@ -361,7 +361,7 @@ fn sync_fraction(state: &SyncState) -> f64 {
 fn browse_pane(scene: Scene) -> impl Piece {
     nav_stack(scene.browse_path, browse_root(scene))
         .destination(move |scope: &Scope| scope_page(scene, scope.clone()))
-        .id("browse-stack")
+        .id(day::id!(browse_stack))
 }
 
 /// The root of the Browse stack: the cut, and its list.
@@ -379,7 +379,7 @@ fn browse_root(scene: Scene) -> impl Piece {
                         .to_string()
                 },
                 Scope::Country,
-                "country-list",
+                day::id!(country_list),
             )
             .any(),
             2 => facet_list(
@@ -387,7 +387,7 @@ fn browse_root(scene: Scene) -> impl Piece {
                 app.catalog.tags,
                 |f| tag_name(&f.key),
                 Scope::Tag,
-                "tag-list",
+                day::id!(tag_list),
             )
             .any(),
             3 => facet_list(
@@ -395,12 +395,14 @@ fn browse_root(scene: Scene) -> impl Piece {
                 app.catalog.languages,
                 |f| language_name(&f.key),
                 Scope::Language,
-                "language-list",
+                day::id!(language_list),
             )
             .any(),
             _ => {
                 let query = app.catalog.stations_for(|| Scope::Top);
-                station_list(scene, query, "browse-list").grow().any()
+                station_list(scene, query, day::id!(browse_list))
+                    .grow()
+                    .any()
             }
         },
     ),))
@@ -411,7 +413,7 @@ fn browse_root(scene: Scene) -> impl Piece {
 fn scope_page(scene: Scene, scope: Scope) -> impl Piece {
     let app = App::app();
     let query = app.catalog.stations_for(move || scope.clone());
-    station_list(scene, query, "browse-list").grow()
+    station_list(scene, query, day::id!(browse_list)).grow()
 }
 
 /// A `Scope` as a route segment of the Browse stack (https://daybrite.dev/docs/navigation):
@@ -487,7 +489,7 @@ fn facet_list(
     source: Signal<Vec<Facet>>,
     name: impl Fn(&Facet) -> String + Copy + 'static,
     pick: impl Fn(String) -> Scope + 'static,
-    id: &'static str,
+    id: day::ElementId,
 ) -> impl Piece {
     list(
         items(move || source.get(), |f: &Facet| f.key.clone()),
@@ -525,7 +527,7 @@ fn search_pane(scene: Scene) -> impl Piece {
     column((
         text_field(scene.query)
             .placeholder(res::str::search_hint())
-            .id("search-field")
+            .id(day::id!(search_field))
             .padding(Insets {
                 top: 8.0,
                 leading: 12.0,
@@ -547,7 +549,7 @@ fn search_pane(scene: Scene) -> impl Piece {
                     bottom: 4.0,
                     trailing: 14.0,
                 })
-                .id("search-hint")
+                .id(day::id!(search_hint))
             },
         ),
         {
@@ -558,11 +560,11 @@ fn search_pane(scene: Scene) -> impl Piece {
                     label(move || res::str::search_none(scene.query.get()).format())
                         .secondary()
                         .padding(14.0)
-                        .id("search-none")
+                        .id(day::id!(search_none))
                 },
             )
         },
-        station_list(scene, query, "search-list").grow(),
+        station_list(scene, query, day::id!(search_list)).grow(),
     ))
     .grow()
 }
@@ -627,7 +629,7 @@ fn library_pane(scene: Scene) -> impl Piece {
             ],
         )
         .segmented()
-        .id("library-cut")
+        .id(day::id!(library_cut))
         .padding(Insets {
             top: 8.0,
             leading: 12.0,
@@ -643,7 +645,7 @@ fn library_pane(scene: Scene) -> impl Piece {
                     options.extend(names().into_iter().map(|n| (Some(n.clone()), n)));
                     options
                 })
-                .id("library-tag")
+                .id(day::id!(library_tag))
                 .padding(Insets {
                     top: 0.0,
                     leading: 12.0,
@@ -664,7 +666,7 @@ fn library_pane(scene: Scene) -> impl Piece {
                 })
                 .secondary()
                 .padding(14.0)
-                .id("library-empty")
+                .id(day::id!(library_empty))
             },
         ),
         list(
@@ -702,7 +704,7 @@ fn library_pane(scene: Scene) -> impl Piece {
                     .collect()
             }
         })
-        .id("library-list")
+        .id(day::id!(library_list))
         .grow(),
     ))
     .grow()
@@ -756,7 +758,7 @@ fn library_row(app: App, id: impl Fn() -> u64 + Copy + 'static) -> impl Piece {
 
 /// The one station list every pane uses: a live query as the row source, rows faulting in as
 /// they scroll, the selection two-way with the window's `selected`.
-fn station_list(scene: Scene, query: Query<Station>, id: &'static str) -> impl Piece {
+fn station_list(scene: Scene, query: Query<Station>, id: day::ElementId) -> impl Piece {
     let app = App::app();
     let positions = query.clone();
     let order = query.clone();
@@ -864,7 +866,7 @@ pub(crate) fn station_page() -> impl Piece {
                         .font(Font::Title3)
                         .secondary()
                         .align(TextAlign::Center)
-                        .id("station-none"),
+                        .id(day::id!(station_none)),
                     spacer(),
                 ))
                 .align(HAlign::Center)
@@ -956,9 +958,10 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
                         )
                     })
                     .id(if i == 0 {
-                        "station-play".to_string()
+                        day::id!(station_play)
                     } else {
-                        format!("station-play-{i}")
+                        // The station's further streams, one button each after the first.
+                        day::id!(station_play_stream, i)
                     });
                 if i == 0 { b.prominent() } else { b.bordered() }
             })
@@ -975,7 +978,7 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
                         scene.queue.get_untracked(),
                     )
                 })
-                .id("station-play"),
+                .id(day::id!(station_play)),
         ]
     };
     let fav_label = {
@@ -996,8 +999,10 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
             label(place)
                 .font(Font::Caption)
                 .secondary()
-                .id("station-place"),
-            label(s.name.clone()).font(Font::Title).id("station-name"),
+                .id(day::id!(station_place)),
+            label(s.name.clone())
+                .font(Font::Title)
+                .id(day::id!(station_name)),
             // What the player says about this station while it is the one on air.
             when(
                 move || player.is_current(&state_uuid),
@@ -1005,7 +1010,7 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
                     label(move || state_line(player.state.get()))
                         .font(Font::Caption)
                         .color(ACCENT)
-                        .id("station-state")
+                        .id(day::id!(station_state))
                 },
             ),
             row(play_buttons)
@@ -1015,9 +1020,10 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
                 button(fav_label)
                     .bordered()
                     .action(move || app.catalog.toggle_favorite(&fav_uuid))
-                    .id("station-favorite"),
+                    .id(day::id!(station_favorite)),
                 (!s.homepage.is_empty()).then(|| {
-                    link(res::str::station_homepage(), s.homepage.clone()).id("station-homepage")
+                    link(res::str::station_homepage(), s.homepage.clone())
+                        .id(day::id!(station_homepage))
                 }),
             ))
             .spacing(Space::M)
@@ -1050,12 +1056,12 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
             // the app's store, keyed by the catalog's uuid, and outlive every catalog update.
             label(res::str::station_notes())
                 .font(Font::Headline)
-                .id("station-notes-title"),
+                .id(day::id!(station_notes_title)),
             text_area(app.catalog.note(&uuid).text())
                 .placeholder(res::str::station_notes_hint())
                 .min_lines(3)
                 .max_lines(8)
-                .id("station-note"),
+                .id(day::id!(station_note)),
             label(res::str::station_tags_title()).font(Font::Headline),
             user_tags(app, scene, uuid.clone()),
         ))
@@ -1090,16 +1096,16 @@ fn user_tags(app: App, scene: Scene, uuid: Vec<u8>) -> impl Piece {
                 button(format!("{tag} ×"))
                     .bordered()
                     .action(move || app.catalog.remove_tag(&uuid, &remove_tag))
-                    .id(format!("station-user-tag-{}", tag.replace(' ', "-")))
+                    .id(day::id!(station_user_tag, tag.replace(' ', "-")))
             },
         ),))
         .spacing(6.0)
         .fit(RowFit::Wrap { run_spacing: 6.0 })
-        .id("station-user-tags"),
+        .id(day::id!(station_user_tags)),
         row((
             text_field(scene.new_tag)
                 .placeholder(res::str::station_tag_hint())
-                .id("station-tag-field")
+                .id(day::id!(station_tag_field))
                 .grow(),
             button(res::str::station_tag_add())
                 .bordered()
@@ -1113,7 +1119,7 @@ fn user_tags(app: App, scene: Scene, uuid: Vec<u8>) -> impl Piece {
                         scene.new_tag.set(String::new());
                     });
                 })
-                .id("station-tag-add"),
+                .id(day::id!(station_tag_add)),
         ))
         .spacing(Space::S)
         .max_width(360.0),
@@ -1138,7 +1144,7 @@ fn chips(tags: Vec<String>) -> impl Piece {
     row(pieces)
         .spacing(6.0)
         .fit(RowFit::Wrap { run_spacing: 6.0 })
-        .id("station-tags")
+        .id(day::id!(station_tags))
 }
 
 /// What the player says, as a line: `Live`, `Connecting…`, or why it could not play.
@@ -1172,7 +1178,7 @@ pub(crate) fn playing_page() -> impl Piece {
         keyed(move || station().map(|s| s.uuid), move |_| artwork(player)),
         when(
             move || station().is_none(),
-            || art_tile().id("playing-art-empty"),
+            || art_tile().id(day::id!(playing_art_empty)),
         ),
         label(move || {
             station()
@@ -1182,7 +1188,7 @@ pub(crate) fn playing_page() -> impl Piece {
         .font(Font::Title2)
         .align(TextAlign::Center)
         .max_width(480.0)
-        .id("playing-name"),
+        .id(day::id!(playing_name)),
         // The track: the title the stream names, the artist and album under it, else what
         // the player is doing.
         label(move || match (station(), player.track.get()) {
@@ -1193,7 +1199,7 @@ pub(crate) fn playing_page() -> impl Piece {
         .font(Font::Headline)
         .align(TextAlign::Center)
         .max_width(480.0)
-        .id("playing-track"),
+        .id(day::id!(playing_track)),
         label(move || match (station(), player.track.get()) {
             (Some(_), Some(t)) => {
                 let mut parts = Vec::new();
@@ -1222,14 +1228,14 @@ pub(crate) fn playing_page() -> impl Piece {
         .secondary()
         .align(TextAlign::Center)
         .max_width(480.0)
-        .id("playing-artist"),
+        .id(day::id!(playing_artist)),
         // The transport: Previous | Play/Pause | Next, as tinted vector glyphs.
         row((
             transport_glyph(res::vectors::skip_previous, 40.0, move || {
                 player.has_previous()
             })
             .on_tap(move || player.step(-1))
-            .id("playing-previous"),
+            .id(day::id!(playing_previous)),
             column((when(
                 move || player.is_on_air(),
                 || {
@@ -1253,10 +1259,10 @@ pub(crate) fn playing_page() -> impl Piece {
             })
             .corner_radius(38.0)
             .on_tap(move || player.toggle())
-            .id("playing-toggle"),
+            .id(day::id!(playing_toggle)),
             transport_glyph(res::vectors::skip_next, 40.0, move || player.has_next())
                 .on_tap(move || player.step(1))
-                .id("playing-next"),
+                .id(day::id!(playing_next)),
         ))
         .spacing(28.0)
         .align(VAlign::Center),
@@ -1282,14 +1288,14 @@ pub(crate) fn playing_page() -> impl Piece {
                     .frame(28.0, 28.0)
             }),))
             .on_tap(move || player.toggle_favorite())
-            .id("playing-favorite"),
+            .id(day::id!(playing_favorite)),
             vector(res::vectors::volume_down)
                 .tint(Color::hex(0x9CA3AF))
                 .frame(22.0, 22.0),
             // Tall enough for Material 3's slider, whose handle stands above its track.
             slider(player.volume)
                 .range(0.0..=1.0)
-                .id("playing-volume")
+                .id(day::id!(playing_volume))
                 .frame(200.0, 44.0),
             vector(res::vectors::volume_up)
                 .tint(Color::hex(0x9CA3AF))
@@ -1303,7 +1309,7 @@ pub(crate) fn playing_page() -> impl Piece {
             .secondary()
             .align(TextAlign::Center)
             .max_width(420.0)
-            .id("playing-meta"),
+            .id(day::id!(playing_meta)),
         when(
             move || on_air() && !has_toolbar(),
             move || {
@@ -1319,14 +1325,14 @@ pub(crate) fn playing_page() -> impl Piece {
                             scene.show(s.id);
                         }
                     })
-                    .id("playing-open")
+                    .id(day::id!(playing_open))
             },
         ),
         button(res::str::cmd_stop())
             .bordered()
             .enabled(on_air)
             .action(move || player.stop.notify())
-            .id("playing-stop"),
+            .id(day::id!(playing_stop)),
         spacer(),
     ))
     .spacing(Space::L)
@@ -1366,10 +1372,10 @@ fn artwork(player: crate::Player) -> impl Piece {
             .rounded(24.0)
             .placeholder_color(tinted(ACCENT, 0.12))
             .frame(240.0, 240.0)
-            .id("playing-art")
+            .id(day::id!(playing_art))
             .any()
     } else {
-        art_tile().id("playing-art-tile").any()
+        art_tile().id(day::id!(playing_art_tile)).any()
     }
 }
 
@@ -1395,25 +1401,25 @@ pub(crate) fn catalog_group(app: App) -> Group {
         .subtitle(move || sync_line(&sync.state.get()))
         .row(
             rows::info(res::str::catalog_installed(), move || installed_line(app))
-                .id("catalog-installed"),
+                .id(day::id!(catalog_installed)),
         )
         .row(
             rows::info(res::str::catalog_status(), move || {
                 sync_line(&sync.state.get())
             })
-            .id("catalog-status"),
+            .id(day::id!(catalog_status)),
         )
         // The publisher override: every edit persists, and the sync reads it at the next check.
         .row(
             rows::text(&BASE, res::str::catalog_source())
                 .placeholder(DEFAULT_BASE)
                 .caption(res::str::catalog_source_hint())
-                .id("catalog-source"),
+                .id(day::id!(catalog_source)),
         )
         .row(
             rows::action(res::str::catalog_check(), move || sync.check(app.catalog))
                 .busy(sync.busy)
-                .id("catalog-check"),
+                .id(day::id!(catalog_check)),
         )
 }
 
