@@ -20,18 +20,11 @@ use crate::sync::Sync;
 // The mobile / embedded entry point; a plain cargo desktop build enters through src/main.rs.
 day::day_start!(options: window(), root);
 
-/// The window every entry point opens. The locale catalog and title are handed to `launch`
-/// rather than installed here (https://daybrite.dev/docs/localization).
+/// The window every entry point opens: the generated options carry the locale catalog, the
+/// localized title and the version (https://daybrite.dev/docs/localization); the size is a
+/// desktop default, mobile fills the screen regardless.
 pub fn window() -> day::WindowOptions {
-    day::WindowOptions {
-        locales: Some((res::locales::DEFAULT, res::locales::CATALOG)),
-        title_fn: Some(|| res::str::app_title().format()),
-        // A desktop default; mobile fills the screen regardless.
-        size: day::prelude::Size::new(1100.0, 700.0),
-        // Named in Day's exit line and the About fallback (https://daybrite.dev/docs/lifecycle).
-        version: Some(env!("CARGO_PKG_VERSION").into()),
-        ..Default::default()
-    }
+    res::window_options().size(1100.0, 700.0)
 }
 
 // Typed constants for everything under `resource/` (https://daybrite.dev/docs/resources).
@@ -266,10 +259,10 @@ pub(crate) struct Scene {
     pub browse_path: Signal<Vec<Scope>>,
     /// The Search pane's text.
     pub query: Signal<String>,
-    /// The Library pane's cut: 0 favorites, 1 recents.
-    pub library_cut: Signal<usize>,
-    /// The Library's filter by the listener's own tag: 0 is every row, `n` the n-th tag.
-    pub library_tag: Signal<usize>,
+    /// The Library pane's cut: favorites or recents.
+    pub library_cut: Signal<LibraryCut>,
+    /// The Library's filter by the listener's own tag: `None` is every row.
+    pub library_tag: Signal<Option<String>>,
     /// The tag being typed on a station page.
     pub new_tag: Signal<String>,
 }
@@ -284,8 +277,8 @@ impl Ambient for Scene {
             browse_cut: Signal::new(0),
             browse_path: Signal::new(Vec::new()),
             query: Signal::new(String::new()),
-            library_cut: Signal::new(0),
-            library_tag: Signal::new(0),
+            library_cut: Signal::new(LibraryCut::Favorites),
+            library_tag: Signal::new(None),
             new_tag: Signal::new(String::new()),
         }
     }
@@ -481,57 +474,41 @@ fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
             .title(res::str::app_title())
             .toolbar(transport)
             // The station list as a real content-list pane: its own column where the toolkit
-            // has one, the pushed middle layer on a phone.
-            .content_list(content_pane)
-            .content_list_width(360.0)
-            // Now Playing and Settings keep the whole detail area.
-            .content_list_for(|s: &Section| {
-                matches!(s, Section::Browse | Section::Search | Section::Library)
-            })
-            .detail_visible(scene.detail_open)
-            .detail_title(move || detail_title(scene))
-            .item_icon(
-                Section::Browse,
-                res::str::nav_browse(),
-                res::vectors::nav_browse,
-                station_page,
+            // has one, the pushed middle layer on a phone. Now Playing and Settings keep the
+            // whole detail area.
+            .content_list(
+                ContentList::new(content_pane)
+                    .width(360.0)
+                    .only_for(|s: &Section| {
+                        matches!(s, Section::Browse | Section::Search | Section::Library)
+                    })
+                    .detail_visible(scene.detail_open)
+                    .detail_title(move || detail_title(scene)),
             )
-            .icon_tint(Color::hex(0x3B82F6))
-            .item_icon(
-                Section::Search,
-                res::str::nav_search(),
-                res::vectors::nav_search,
-                station_page,
-            )
-            .icon_tint(Color::hex(0x8B5CF6))
-            .item_icon(
-                Section::Playing,
-                res::str::nav_playing(),
-                res::vectors::nav_playing,
-                playing_page,
-            )
-            .icon_tint(Color::hex(0x10B981))
-            .item_icon(
-                Section::Library,
-                res::str::nav_library(),
-                res::vectors::nav_library,
-                station_page,
-            )
-            .icon_tint(Color::hex(0xEF4444))
-            // Use the desktop's App menu Settings… item; without a menu bar, keep Settings
-            // reachable as a navigation section (https://daybrite.dev/docs/settings).
-            .items(
-                {
-                    let prefs = prefs.clone();
-                    move || prefs.nav_keys(Section::Settings)
-                },
-                |s: &Section| {
-                    item(*s, res::str::nav_settings())
-                        .icon(res::vectors::tab_settings)
+            .items((
+                item(Section::Browse, res::str::nav_browse())
+                    .icon(res::vectors::nav_browse)
+                    .icon_tint(Color::hex(0x3B82F6))
+                    .page(station_page),
+                item(Section::Search, res::str::nav_search())
+                    .icon(res::vectors::nav_search)
+                    .icon_tint(Color::hex(0x8B5CF6))
+                    .page(station_page),
+                item(Section::Playing, res::str::nav_playing())
+                    .icon(res::vectors::nav_playing)
+                    .icon_tint(Color::hex(0x10B981))
+                    .page(playing_page),
+                item(Section::Library, res::str::nav_library())
+                    .icon(res::vectors::nav_library)
+                    .icon_tint(Color::hex(0xEF4444))
+                    .page(station_page),
+                // Use the desktop's App menu Settings… item; without a menu bar, keep Settings
+                // reachable as a navigation section (https://daybrite.dev/docs/settings).
+                prefs.nav_item(Section::Settings).map(|i| {
+                    i.icon(res::vectors::tab_settings)
                         .icon_tint(Color::hex(0x6B7280))
-                },
-            )
-            .destination(move |_: &Section| prefs.page())
+                }),
+            ))
             .id("nav");
         // Only the first window joins the route namespace and restores where it left off.
         let nav = if primary {
@@ -546,9 +523,9 @@ fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
             column((
                 nav.grow(),
                 media(player.url)
-                    .audio_only(true)
-                    .autoplay(false)
-                    .controls(false)
+                    .audio_only()
+                    .no_autoplay()
+                    .no_controls()
                     .volume(player.volume)
                     .play(player.play)
                     .pause(player.pause)
@@ -616,18 +593,17 @@ fn menus() -> Vec<MenuEntry> {
     let player = app.player;
     vec![
         sub_menu(
-            res::str::menu_file().format(),
+            res::str::menu_file(),
             vec![
                 menu_role(MenuRole::NewWindow),
                 menu_separator(),
-                menu_item(res::str::catalog_check().format())
-                    .action(move || app.sync.check(app.catalog)),
+                menu_item(res::str::catalog_check()).action(move || app.sync.check(app.catalog)),
                 menu_separator(),
                 menu_role(MenuRole::CloseWindow),
             ],
         ),
         sub_menu(
-            res::str::menu_edit().format(),
+            res::str::menu_edit(),
             vec![
                 menu_role(MenuRole::Cut),
                 menu_role(MenuRole::Copy),
@@ -638,24 +614,24 @@ fn menus() -> Vec<MenuEntry> {
         // The player is app-wide, so these need no window: whichever window is in front,
         // there is one stream.
         sub_menu(
-            res::str::menu_playback().format(),
+            res::str::menu_playback(),
             vec![
-                menu_item(res::str::cmd_play().format())
-                    .shortcut(Shortcut::new("p"))
+                menu_item(res::str::cmd_play())
+                    .shortcut(Shortcut::primary("p"))
                     .action(move || player.toggle()),
-                menu_item(res::str::cmd_stop().format())
-                    .shortcut(Shortcut::new("."))
+                menu_item(res::str::cmd_stop())
+                    .shortcut(Shortcut::primary("."))
                     .action(move || player.stop.notify()),
                 menu_separator(),
-                menu_item(res::str::playing_previous().format())
-                    .shortcut(Shortcut::new("["))
+                menu_item(res::str::playing_previous())
+                    .shortcut(Shortcut::primary("["))
                     .action(move || player.step(-1)),
-                menu_item(res::str::playing_next().format())
-                    .shortcut(Shortcut::new("]"))
+                menu_item(res::str::playing_next())
+                    .shortcut(Shortcut::primary("]"))
                     .action(move || player.step(1)),
                 menu_separator(),
-                menu_item(res::str::cmd_favorite().format())
-                    .shortcut(Shortcut::new("d"))
+                menu_item(res::str::cmd_favorite())
+                    .shortcut(Shortcut::primary("d"))
                     .action(move || player.toggle_favorite()),
             ],
         ),

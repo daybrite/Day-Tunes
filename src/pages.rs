@@ -224,50 +224,56 @@ fn station_meta(s: &Station) -> String {
 
 // --- the content-list pane -------------------------------------------------------------------
 
+/// The Library pane's cut.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum LibraryCut {
+    Favorites,
+    Recents,
+}
+
 /// The middle column, built once per window and re-scoped by the section (the host keeps it
-/// resident; `when` swaps what it shows). Until a catalog is attached, it shows the download
+/// resident; `switch` swaps what it shows). Until a catalog is attached, it shows the download
 /// instead, whatever the section: there is nothing to list yet.
 pub(crate) fn content_pane() -> impl Piece {
     let scene = Scene::ambient();
     let app = App::app();
     let ready = move || app.catalog.attached.get();
     column((
-        when(move || !ready(), move || catalog_panel(app)),
-        when(
-            move || ready() && scene.section.get() == Section::Browse,
-            move || {
-                // The cut is the Browse root's control: drilling into a country pushes a
-                // page that declares none, so it leaves with the list it belongs to
-                // (https://daybrite.dev/docs/toolbars). It used to be a route test inside a
-                // window-wide toolbar builder.
-                browse_pane(scene).toolbar(move || {
-                    if !scene.browse_path.get().is_empty() {
-                        return Vec::new();
-                    }
-                    vec![
-                        toolbar_segmented(
-                            "tb-cut",
+        when(move || !ready(), move || catalog_panel(app)).otherwise(move || {
+            switch(
+                move || scene.section.get(),
+                move |section| match section {
+                    Section::Browse => {
+                        // The cut is the Browse root's control: drilling into a country pushes
+                        // a page that declares none, so it leaves with the list it belongs to
+                        // (https://daybrite.dev/docs/toolbars).
+                        let pane = browse_pane(scene).toolbar(move || {
+                            if !scene.browse_path.get().is_empty() {
+                                return Vec::new();
+                            }
                             vec![
-                                segment(res::str::browse_top()),
-                                segment(res::str::browse_countries()),
-                                segment(res::str::browse_genres()),
-                                segment(res::str::browse_languages()),
-                            ],
-                            scene.browse_cut,
-                        )
-                        .placement(ToolbarPlacement::Principal),
-                    ]
-                })
-            },
-        ),
-        when(
-            move || ready() && scene.section.get() == Section::Search,
-            move || search_pane(scene),
-        ),
-        when(
-            move || ready() && scene.section.get() == Section::Library,
-            move || library_pane(scene),
-        ),
+                                toolbar_segmented(
+                                    "tb-cut",
+                                    vec![
+                                        segment(res::str::browse_top()),
+                                        segment(res::str::browse_countries()),
+                                        segment(res::str::browse_genres()),
+                                        segment(res::str::browse_languages()),
+                                    ],
+                                    scene.browse_cut,
+                                )
+                                .placement(ToolbarPlacement::Principal),
+                            ]
+                        });
+                        Some(pane.any())
+                    }
+                    Section::Search => Some(search_pane(scene).any()),
+                    Section::Library => Some(library_pane(scene).any()),
+                    // Now Playing and Settings keep the whole detail area: no list pane.
+                    Section::Playing | Section::Settings => None,
+                },
+            )
+        }),
     ))
     .grow()
 }
@@ -280,7 +286,7 @@ fn catalog_panel(app: App) -> impl Piece {
         vector(res::vectors::radio)
             .tint(ACCENT)
             .frame(72.0, 72.0)
-            .padding(16.0)
+            .padding(Space::L)
             .background(tinted(ACCENT, 0.12))
             .corner_radius(20.0),
         label(res::str::catalog_fetching())
@@ -312,10 +318,10 @@ fn catalog_panel(app: App) -> impl Piece {
         ),
         spacer(),
     ))
-    .spacing(12.0)
+    .spacing(Space::M)
     .align(HAlign::Center)
     .grow()
-    .padding(24.0)
+    .padding(Space::XL)
 }
 
 /// The sync, as a line for the download panel and Settings.
@@ -361,55 +367,43 @@ fn browse_pane(scene: Scene) -> impl Piece {
 /// The root of the Browse stack: the cut, and its list.
 fn browse_root(scene: Scene) -> impl Piece {
     let app = App::app();
-    column((
-        when(
-            move || scene.browse_cut.get() == 0,
-            move || {
+    column((switch(
+        move || scene.browse_cut.get(),
+        move |cut| match cut {
+            1 => facet_list(
+                scene,
+                app.catalog.countries,
+                |f| {
+                    format!("{} {}", flag(&f.key), short_country(&f.name))
+                        .trim()
+                        .to_string()
+                },
+                Scope::Country,
+                "country-list",
+            )
+            .any(),
+            2 => facet_list(
+                scene,
+                app.catalog.tags,
+                |f| tag_name(&f.key),
+                Scope::Tag,
+                "tag-list",
+            )
+            .any(),
+            3 => facet_list(
+                scene,
+                app.catalog.languages,
+                |f| language_name(&f.key),
+                Scope::Language,
+                "language-list",
+            )
+            .any(),
+            _ => {
                 let query = app.catalog.stations_for(|| Scope::Top);
-                station_list(scene, query, "browse-list").grow()
-            },
-        ),
-        when(
-            move || scene.browse_cut.get() == 1,
-            move || {
-                facet_list(
-                    scene,
-                    app.catalog.countries,
-                    |f| {
-                        format!("{} {}", flag(&f.key), short_country(&f.name))
-                            .trim()
-                            .to_string()
-                    },
-                    Scope::Country,
-                    "country-list",
-                )
-            },
-        ),
-        when(
-            move || scene.browse_cut.get() == 2,
-            move || {
-                facet_list(
-                    scene,
-                    app.catalog.tags,
-                    |f| tag_name(&f.key),
-                    Scope::Tag,
-                    "tag-list",
-                )
-            },
-        ),
-        when(
-            move || scene.browse_cut.get() == 3,
-            move || {
-                facet_list(
-                    scene,
-                    app.catalog.languages,
-                    |f| language_name(&f.key),
-                    Scope::Language,
-                    "language-list",
-                )
-            },
-        ),
-    ))
+                station_list(scene, query, "browse-list").grow().any()
+            }
+        },
+    ),))
     .grow()
 }
 
@@ -519,12 +513,7 @@ fn facet_row(name: impl Fn() -> String + 'static, count: impl Fn() -> i64 + 'sta
             .secondary(),
     ))
     .spacing(10.0)
-    .padding(Insets {
-        top: 6.0,
-        leading: 14.0,
-        bottom: 6.0,
-        trailing: 14.0,
-    })
+    .padding(Insets::symmetric(14.0, 6.0))
 }
 
 /// Search: a field and the stations that match, live.
@@ -582,10 +571,6 @@ fn search_pane(scene: Scene) -> impl Piece {
 /// the listener's own tags when they have made any.
 fn library_pane(scene: Scene) -> impl Piece {
     let app = App::app();
-    let cuts = [
-        res::str::library_favorites().format(),
-        res::str::library_recents().format(),
-    ];
     // The listener's tag vocabulary: the distinct names across every tagging, live. Shared
     // by the filter, the picker, and the queries, so it is one closure behind an `Rc`.
     let all = app.catalog.all_taggings();
@@ -599,32 +584,32 @@ fn library_pane(scene: Scene) -> impl Piece {
         names.dedup();
         names
     });
-    // A vocabulary that shrinks under the filter drops the filter.
-    let names_len = tag_names.clone();
+    // A vocabulary that loses the filtered tag drops the filter.
+    let names_known = tag_names.clone();
     watch(
-        move || names_len().len(),
-        move |n, _| {
-            if scene.library_tag.get_untracked() > *n {
-                scene.library_tag.set(0);
+        move || names_known(),
+        move |names, _| {
+            if scene
+                .library_tag
+                .get_untracked()
+                .is_some_and(|t| !names.contains(&t))
+            {
+                scene.library_tag.set(None);
             }
         },
     );
-    let names_of = tag_names.clone();
-    let tag_of: Rc<dyn Fn() -> Option<String>> = Rc::new(move || match scene.library_tag.get() {
-        0 => None,
-        i => names_of().get(i - 1).cloned(),
-    });
     let names_shown = tag_names.clone();
     let names_options = tag_names.clone();
-    let (tag_f, tag_r) = (tag_of.clone(), tag_of.clone());
-    let favorites = app.catalog.favorites_tagged(move || tag_f());
-    let recents = app.catalog.recents_tagged(move || tag_r());
+    let favorites = app
+        .catalog
+        .favorites_tagged(move || scene.library_tag.get());
+    let recents = app.catalog.recents_tagged(move || scene.library_tag.get());
     // The listed ids, by cut. A favorite and a recent of one station share an id
     // (`station_id`), so a row resolves the same way in either cut.
     let ids = {
         let (f, r) = (favorites.clone(), recents.clone());
         move || -> Vec<u64> {
-            if scene.library_cut.get() == 0 {
+            if scene.library_cut.get() == LibraryCut::Favorites {
                 f.ids().iter().map(|id| id.handle()).collect()
             } else {
                 r.ids().iter().map(|id| id.handle()).collect()
@@ -634,39 +619,44 @@ fn library_pane(scene: Scene) -> impl Piece {
     let ids_empty = ids.clone();
     let ids_rows = ids.clone();
     column((
-        picker(cuts, scene.library_cut)
-            .segmented()
-            .id("library-cut")
-            .padding(Insets {
-                top: 8.0,
-                leading: 12.0,
-                bottom: 4.0,
-                trailing: 12.0,
-            }),
+        picker(
+            scene.library_cut,
+            [
+                (LibraryCut::Favorites, res::str::library_favorites()),
+                (LibraryCut::Recents, res::str::library_recents()),
+            ],
+        )
+        .segmented()
+        .id("library-cut")
+        .padding(Insets {
+            top: 8.0,
+            leading: 12.0,
+            bottom: 4.0,
+            trailing: 12.0,
+        }),
         when(
             move || !names_shown().is_empty(),
             move || {
                 let names = names_options.clone();
-                picker([res::str::library_all_tags().format()], scene.library_tag)
-                    .options_reactive(move || {
-                        let mut options = vec![res::str::library_all_tags().format()];
-                        options.extend(names());
-                        options
-                    })
-                    .id("library-tag")
-                    .padding(Insets {
-                        top: 0.0,
-                        leading: 12.0,
-                        bottom: 4.0,
-                        trailing: 12.0,
-                    })
+                picker(scene.library_tag, move || {
+                    let mut options = vec![(None, res::str::library_all_tags().format())];
+                    options.extend(names().into_iter().map(|n| (Some(n.clone()), n)));
+                    options
+                })
+                .id("library-tag")
+                .padding(Insets {
+                    top: 0.0,
+                    leading: 12.0,
+                    bottom: 4.0,
+                    trailing: 12.0,
+                })
             },
         ),
         when(
             move || ids_empty().is_empty(),
             move || {
                 label(move || {
-                    if scene.library_cut.get() == 0 {
+                    if scene.library_cut.get() == LibraryCut::Favorites {
                         res::str::library_no_favorites().format()
                     } else {
                         res::str::library_no_recents().format()
@@ -759,12 +749,7 @@ fn library_row(app: App, id: impl Fn() -> u64 + Copy + 'static) -> impl Piece {
         ),
     ))
     .spacing(10.0)
-    .padding(Insets {
-        top: 8.0,
-        leading: 14.0,
-        bottom: 8.0,
-        trailing: 14.0,
-    })
+    .padding(Insets::symmetric(14.0, 8.0))
 }
 
 // --- station lists and rows -------------------------------------------------------------------
@@ -798,7 +783,7 @@ fn station_list(scene: Scene, query: Query<Station>, id: &'static str) -> impl P
             .into_iter()
             .collect()
     })
-    .separators(true)
+    .separators()
     .id(id)
 }
 
@@ -852,20 +837,15 @@ fn station_row(app: App, slot: ModelSlot<Station>) -> impl Piece {
         ),
     ))
     .spacing(10.0)
-    .padding(Insets {
-        top: 8.0,
-        leading: 14.0,
-        bottom: 8.0,
-        trailing: 14.0,
-    })
+    .padding(Insets::symmetric(14.0, 8.0))
 }
 
 // --- the station page --------------------------------------------------------------------------
 
 /// The detail for Browse, Search, and Library: the selected station's page, or the empty state.
 ///
-/// `each` over a nought-or-one list rather than a conditional, because the page has to be
-/// rebuilt when the selection changes, not merely shown and hidden.
+/// `keyed` by the selection rather than a conditional, because the page has to be rebuilt when
+/// the selection changes, not merely shown and hidden.
 pub(crate) fn station_page() -> impl Piece {
     let scene = Scene::ambient();
     let app = App::app();
@@ -889,23 +869,18 @@ pub(crate) fn station_page() -> impl Piece {
                 ))
                 .align(HAlign::Center)
                 .grow()
-                .padding(24.0)
+                .padding(Space::XL)
                 .grow()
             },
         ),
-        each(
-            items(
-                move || {
-                    scene
-                        .selected
-                        .get()
-                        .filter(|id| app.catalog.station(*id).is_some())
-                        .into_iter()
-                        .collect::<Vec<u64>>()
-                },
-                |id: &u64| *id,
-            ),
-            move |slot: ItemSlot<u64, u64>| station_detail(app, scene, slot.key()),
+        keyed(
+            move || {
+                scene
+                    .selected
+                    .get()
+                    .filter(|id| app.catalog.station(*id).is_some())
+            },
+            move |id| station_detail(app, scene, *id),
         ),
     ))
     .grow()
@@ -955,7 +930,7 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
         .collect();
 
     // One Play per stream variant when the station publishes several, else one for the station.
-    let play_buttons: Vec<AnyPiece> = if streams.len() > 1 {
+    let play_buttons: Vec<_> = if streams.len() > 1 {
         streams
             .iter()
             .enumerate()
@@ -985,11 +960,7 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
                     } else {
                         format!("station-play-{i}")
                     });
-                if i == 0 {
-                    b.prominent().any()
-                } else {
-                    b.bordered().any()
-                }
+                if i == 0 { b.prominent() } else { b.bordered() }
             })
             .collect()
     } else {
@@ -1004,8 +975,7 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
                         scene.queue.get_untracked(),
                     )
                 })
-                .id("station-play")
-                .any(),
+                .id("station-play"),
         ]
     };
     let fav_label = {
@@ -1038,28 +1008,19 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
                         .id("station-state")
                 },
             ),
-            row(PieceVec(play_buttons))
-                .spacing(8.0)
+            row(play_buttons)
+                .spacing(Space::S)
                 .fit(RowFit::Wrap { run_spacing: 8.0 }),
             row((
                 button(fav_label)
                     .bordered()
                     .action(move || app.catalog.toggle_favorite(&fav_uuid))
                     .id("station-favorite"),
-                when(
-                    {
-                        let has = !s.homepage.is_empty();
-                        move || has
-                    },
-                    {
-                        let home = s.homepage.clone();
-                        move || {
-                            link(res::str::station_homepage(), home.clone()).id("station-homepage")
-                        }
-                    },
-                ),
+                (!s.homepage.is_empty()).then(|| {
+                    link(res::str::station_homepage(), s.homepage.clone()).id("station-homepage")
+                }),
             ))
-            .spacing(12.0)
+            .spacing(Space::M)
             .fit(RowFit::Wrap { run_spacing: 8.0 }),
             chips(genres),
             form((
@@ -1098,7 +1059,7 @@ fn station_detail(app: App, scene: Scene, id: u64) -> impl Piece {
             label(res::str::station_tags_title()).font(Font::Headline),
             user_tags(app, scene, uuid.clone()),
         ))
-        .spacing(12.0)
+        .spacing(Space::M)
         .align(HAlign::Leading)
         .padding(20.0),
     )
@@ -1154,33 +1115,27 @@ fn user_tags(app: App, scene: Scene, uuid: Vec<u8>) -> impl Piece {
                 })
                 .id("station-tag-add"),
         ))
-        .spacing(8.0)
+        .spacing(Space::S)
         .max_width(360.0),
     ))
-    .spacing(8.0)
+    .spacing(Space::S)
     .align(HAlign::Leading)
 }
 
 /// The genre chips: one rounded label per tag, tinted with the app's accent.
 fn chips(tags: Vec<String>) -> impl Piece {
-    let pieces: Vec<AnyPiece> = tags
+    let pieces: Vec<_> = tags
         .iter()
         .map(|t| {
             label(tag_name(t))
                 .font(Font::Caption)
                 .color(ACCENT)
-                .padding(Insets {
-                    top: 3.0,
-                    leading: 10.0,
-                    bottom: 3.0,
-                    trailing: 10.0,
-                })
+                .padding(Insets::symmetric(10.0, 3.0))
                 .background(tinted(ACCENT, 0.14))
                 .corner_radius(11.0)
-                .any()
         })
         .collect();
-    row(PieceVec(pieces))
+    row(pieces)
         .spacing(6.0)
         .fit(RowFit::Wrap { run_spacing: 6.0 })
         .id("station-tags")
@@ -1214,18 +1169,7 @@ pub(crate) fn playing_page() -> impl Piece {
         spacer(),
         // The art, rebuilt per station: the catalog's favicon when the station has one, the
         // app's own tile when not or until it loads.
-        each(
-            items(
-                move || {
-                    station()
-                        .map(|s| s.uuid)
-                        .into_iter()
-                        .collect::<Vec<Vec<u8>>>()
-                },
-                |u: &Vec<u8>| u.clone(),
-            ),
-            move |_slot: ItemSlot<Vec<u8>, Vec<u8>>| artwork(player),
-        ),
+        keyed(move || station().map(|s| s.uuid), move |_| artwork(player)),
         when(
             move || station().is_none(),
             || art_tile().id("playing-art-empty"),
@@ -1299,7 +1243,7 @@ pub(crate) fn playing_page() -> impl Piece {
                     .tint(Color::hex(0xFFFFFF))
                     .frame(44.0, 44.0)
             }),))
-            .padding(16.0)
+            .padding(Space::L)
             .background(move || {
                 if on_air() {
                     ACCENT
@@ -1351,7 +1295,7 @@ pub(crate) fn playing_page() -> impl Piece {
                 .tint(Color::hex(0x9CA3AF))
                 .frame(22.0, 22.0),
         ))
-        .spacing(12.0)
+        .spacing(Space::M)
         .align(VAlign::Center),
         // Where the station is and how it streams: the row's second line, here as a footnote.
         label(move || station().map(|s| station_meta(&s)).unwrap_or_default())
@@ -1385,10 +1329,10 @@ pub(crate) fn playing_page() -> impl Piece {
             .id("playing-stop"),
         spacer(),
     ))
-    .spacing(16.0)
+    .spacing(Space::L)
     .align(HAlign::Center)
     .grow()
-    .padding(24.0)
+    .padding(Space::XL)
 }
 
 /// A transport glyph, dimmed while its command has nowhere to go.
@@ -1409,7 +1353,7 @@ fn transport_glyph(
 }
 
 /// The station's logo, from the catalog's favicon URL, a rounded tile the size of album art.
-/// Built once per station (`each` above), since the fetch is one per build.
+/// Built once per station (`keyed` above), since the fetch is one per build.
 fn artwork(player: crate::Player) -> impl Piece {
     let favicon = player
         .current
@@ -1478,7 +1422,11 @@ fn installed_line(app: App) -> String {
     match app.sync.installed.get() {
         Some(m) => {
             let date = m.generated_at.chars().take(10).collect::<String>();
-            res::str::catalog_installed_line(grouped(m.count as i64), date).format()
+            res::str::catalog_installed_line(res::str::CatalogInstalledLine {
+                count: grouped(m.count as i64),
+                date,
+            })
+            .format()
         }
         None if app.catalog.attached.get() => {
             res::str::browse_count(app.catalog.station_count.get() as f64).format()
