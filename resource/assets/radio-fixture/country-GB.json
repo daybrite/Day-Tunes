@@ -1,0 +1,40 @@
+[
+ {
+  "stationuuid": "f4",
+  "name": "BBC Radio 3",
+  "url": "http://stream.live.vc.bbcmedia.co.uk/bbc_radio_three",
+  "url_resolved": "http://stream.live.vc.bbcmedia.co.uk/bbc_radio_three",
+  "homepage": "",
+  "favicon": "",
+  "tags": "classical,public radio",
+  "country": "United Kingdom Of Great Britain And Northern Ireland",
+  "countrycode": "GB",
+  "state": "",
+  "language": "english",
+  "votes": 700,
+  "codec": "AAC",
+  "bitrate": 96,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 2100
+ },
+ {
+  "stationuuid": "f7",
+  "name": "NTS Radio 1",
+  "url": "https://stream-relay-geo.ntslive.net/stream",
+  "url_resolved": "https://stream-relay-geo.ntslive.net/stream",
+  "homepage": "",
+  "favicon": "",
+  "tags": "eclectic,electronic",
+  "country": "United Kingdom Of Great Britain And Northern Ireland",
+  "countrycode": "GB",
+  "state": "",
+  "language": "english",
+  "votes": 450,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 1350
+ }
+]

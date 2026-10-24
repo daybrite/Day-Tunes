@@ -1,0 +1,40 @@
+[
+ {
+  "stationuuid": "f1",
+  "name": "FIP",
+  "url": "https://icecast.radiofrance.fr/fip-midfi.mp3",
+  "url_resolved": "https://icecast.radiofrance.fr/fip-midfi.mp3",
+  "homepage": "https://www.radiofrance.fr/fip",
+  "favicon": "",
+  "tags": "jazz,eclectic,public radio",
+  "country": "France",
+  "countrycode": "FR",
+  "state": "",
+  "language": "french",
+  "votes": 900,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 2700
+ },
+ {
+  "stationuuid": "f8",
+  "name": "Radio Nova",
+  "url": "https://novazz.ice.infomaniak.ch/novazz-128.mp3",
+  "url_resolved": "https://novazz.ice.infomaniak.ch/novazz-128.mp3",
+  "homepage": "",
+  "favicon": "",
+  "tags": "eclectic,indie",
+  "country": "France",
+  "countrycode": "FR",
+  "state": "",
+  "language": "french",
+  "votes": 400,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 1200
+ }
+]

@@ -1,0 +1,40 @@
+[
+ {
+  "stationuuid": "f1",
+  "name": "FIP",
+  "url": "https://icecast.radiofrance.fr/fip-midfi.mp3",
+  "url_resolved": "https://icecast.radiofrance.fr/fip-midfi.mp3",
+  "homepage": "https://www.radiofrance.fr/fip",
+  "favicon": "",
+  "tags": "jazz,eclectic,public radio",
+  "country": "France",
+  "countrycode": "FR",
+  "state": "",
+  "language": "french",
+  "votes": 900,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 2700
+ },
+ {
+  "stationuuid": "f5",
+  "name": "Radio Swiss Jazz",
+  "url": "https://stream.srg-ssr.ch/m/rsj/mp3_128",
+  "url_resolved": "https://stream.srg-ssr.ch/m/rsj/mp3_128",
+  "homepage": "",
+  "favicon": "",
+  "tags": "jazz",
+  "country": "Switzerland",
+  "countrycode": "CH",
+  "state": "",
+  "language": "german",
+  "votes": 650,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 1950
+ }
+]

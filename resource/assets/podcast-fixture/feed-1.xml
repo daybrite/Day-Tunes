@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+<channel>
+  <title>Morning Signal</title>
+  <link>https://example.org/signal</link>
+  <description>Short conversations about the tools that shape a day's work.</description>
+  <itunes:author>Ada Lumen</itunes:author>
+  <item>
+    <title>Episode 3: Steam and Syntax</title>
+    <guid isPermaLink="false">signal-3</guid>
+    <pubDate>Tue, 10 Jun 2025 08:00:00 GMT</pubDate>
+    <enclosure url="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" length="8000000" type="audio/mpeg"/>
+    <itunes:duration>6:12</itunes:duration>
+    <description>Why a good morning starts with a quiet terminal.</description>
+  </item>
+  <item>
+    <title>Episode 2: The Second Cup</title>
+    <guid isPermaLink="false">signal-2</guid>
+    <pubDate>Tue, 03 Jun 2025 08:00:00 GMT</pubDate>
+    <enclosure url="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" length="7000000" type="audio/mpeg"/>
+    <itunes:duration>5:40</itunes:duration>
+    <description>On habits, and how to keep the ones that matter.</description>
+  </item>
+  <item>
+    <title>Episode 1: First Light</title>
+    <guid isPermaLink="false">signal-1</guid>
+    <pubDate>Tue, 27 May 2025 08:00:00 GMT</pubDate>
+    <enclosure url="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" length="7500000" type="audio/mpeg"/>
+    <itunes:duration>5:55</itunes:duration>
+    <description>The pilot.</description>
+  </item>
+</channel>
+</rss>

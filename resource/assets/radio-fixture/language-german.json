@@ -1,0 +1,40 @@
+[
+ {
+  "stationuuid": "f5",
+  "name": "Radio Swiss Jazz",
+  "url": "https://stream.srg-ssr.ch/m/rsj/mp3_128",
+  "url_resolved": "https://stream.srg-ssr.ch/m/rsj/mp3_128",
+  "homepage": "",
+  "favicon": "",
+  "tags": "jazz",
+  "country": "Switzerland",
+  "countrycode": "CH",
+  "state": "",
+  "language": "german",
+  "votes": 650,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 1950
+ },
+ {
+  "stationuuid": "f6",
+  "name": "Deutschlandfunk Kultur",
+  "url": "https://st02.sslstream.dlf.de/dlf/02/128/mp3/stream.mp3",
+  "url_resolved": "https://st02.sslstream.dlf.de/dlf/02/128/mp3/stream.mp3",
+  "homepage": "",
+  "favicon": "",
+  "tags": "culture,talk,public radio",
+  "country": "Germany",
+  "countrycode": "DE",
+  "state": "",
+  "language": "german",
+  "votes": 500,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 1500
+ }
+]

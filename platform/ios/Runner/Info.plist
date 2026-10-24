@@ -65,5 +65,7 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Unlock the scrobbling account kept in the keychain.</string>
 </dict>
 </plist>

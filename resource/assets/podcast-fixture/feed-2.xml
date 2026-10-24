@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+<channel>
+  <title>The Long Walk</title>
+  <link>https://example.org/walk</link>
+  <description>Stories from people who went somewhere on foot.</description>
+  <itunes:author>Field Notes Collective</itunes:author>
+  <item>
+    <title>Across the Fells</title>
+    <guid>walk-2</guid>
+    <pubDate>Sun, 08 Jun 2025 06:00:00 GMT</pubDate>
+    <enclosure url="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" length="9000000" type="audio/mpeg"/>
+    <itunes:duration>7:30</itunes:duration>
+    <description>Three days in the Lake District.</description>
+  </item>
+  <item>
+    <title>The Coast Path</title>
+    <guid>walk-1</guid>
+    <pubDate>Sun, 25 May 2025 06:00:00 GMT</pubDate>
+    <enclosure url="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" length="8800000" type="audio/mpeg"/>
+    <itunes:duration>7:05</itunes:duration>
+    <description>Salt, wind, and a tide table.</description>
+  </item>
+</channel>
+</rss>

@@ -1,0 +1,21 @@
+[
+ {
+  "stationuuid": "f5",
+  "name": "Radio Swiss Jazz",
+  "url": "https://stream.srg-ssr.ch/m/rsj/mp3_128",
+  "url_resolved": "https://stream.srg-ssr.ch/m/rsj/mp3_128",
+  "homepage": "",
+  "favicon": "",
+  "tags": "jazz",
+  "country": "Switzerland",
+  "countrycode": "CH",
+  "state": "",
+  "language": "german",
+  "votes": 650,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 1950
+ }
+]

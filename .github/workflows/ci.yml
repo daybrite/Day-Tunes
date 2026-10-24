@@ -37,9 +37,9 @@ jobs:
       # (`cargo update -p day`) when a new framework API lands, so a local build matches.
       update-day-deps: true
       scripts: dayscript/walkthrough.yaml
-      # The walkthrough reads the small catalog bundled under resource/assets/catalog-fixture
-      # instead of downloading the published one: no network, and the same code path.
-      launch-env: TUNES_CATALOG_URL=asset:catalog-fixture
+      # The walkthrough reads the fixtures bundled under resource/assets/ instead of the
+      # network: the same code paths, deterministic answers.
+      launch-env: TUNES_LIBRARY_IMPORT=asset:library-fixture TUNES_RADIO_INDEX=asset:radio-fixture TUNES_PODCAST_DIRECTORY=asset:podcast-fixture
       locales: en
       app-id: dev.daybrite.tunes
       deploy-web: true

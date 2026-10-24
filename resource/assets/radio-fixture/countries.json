@@ -1,0 +1,27 @@
+[
+ {
+  "name": "France",
+  "iso_3166_1": "FR",
+  "stationcount": 2
+ },
+ {
+  "name": "United States Of America",
+  "iso_3166_1": "US",
+  "stationcount": 2
+ },
+ {
+  "name": "United Kingdom Of Great Britain And Northern Ireland",
+  "iso_3166_1": "GB",
+  "stationcount": 2
+ },
+ {
+  "name": "Switzerland",
+  "iso_3166_1": "CH",
+  "stationcount": 1
+ },
+ {
+  "name": "Germany",
+  "iso_3166_1": "DE",
+  "stationcount": 1
+ }
+]

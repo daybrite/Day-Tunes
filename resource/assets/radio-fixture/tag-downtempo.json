@@ -1,0 +1,21 @@
+[
+ {
+  "stationuuid": "f3",
+  "name": "SomaFM Groove Salad",
+  "url": "https://ice1.somafm.com/groovesalad-128-mp3",
+  "url_resolved": "https://ice1.somafm.com/groovesalad-128-mp3",
+  "homepage": "https://somafm.com",
+  "favicon": "",
+  "tags": "ambient,downtempo,chillout",
+  "country": "United States Of America",
+  "countrycode": "US",
+  "state": "",
+  "language": "english",
+  "votes": 800,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 2400
+ }
+]

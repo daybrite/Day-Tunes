@@ -1,0 +1,21 @@
+[
+ {
+  "stationuuid": "f6",
+  "name": "Deutschlandfunk Kultur",
+  "url": "https://st02.sslstream.dlf.de/dlf/02/128/mp3/stream.mp3",
+  "url_resolved": "https://st02.sslstream.dlf.de/dlf/02/128/mp3/stream.mp3",
+  "homepage": "",
+  "favicon": "",
+  "tags": "culture,talk,public radio",
+  "country": "Germany",
+  "countrycode": "DE",
+  "state": "",
+  "language": "german",
+  "votes": 500,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 1500
+ }
+]

@@ -1,0 +1,40 @@
+[
+ {
+  "stationuuid": "f2",
+  "name": "Radio Paradise",
+  "url": "https://stream.radioparadise.com/mp3-128",
+  "url_resolved": "https://stream.radioparadise.com/mp3-128",
+  "homepage": "https://radioparadise.com",
+  "favicon": "",
+  "tags": "eclectic,rock,indie",
+  "country": "United States Of America",
+  "countrycode": "US",
+  "state": "",
+  "language": "english",
+  "votes": 1200,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 3600
+ },
+ {
+  "stationuuid": "f3",
+  "name": "SomaFM Groove Salad",
+  "url": "https://ice1.somafm.com/groovesalad-128-mp3",
+  "url_resolved": "https://ice1.somafm.com/groovesalad-128-mp3",
+  "homepage": "https://somafm.com",
+  "favicon": "",
+  "tags": "ambient,downtempo,chillout",
+  "country": "United States Of America",
+  "countrycode": "US",
+  "state": "",
+  "language": "english",
+  "votes": 800,
+  "codec": "MP3",
+  "bitrate": 128,
+  "hls": 0,
+  "lastcheckok": 1,
+  "clickcount": 2400
+ }
+]

@@ -1,0 +1,27 @@
+{
+ "resultCount": 2,
+ "results": [
+  {
+   "kind": "podcast",
+   "collectionId": 1001,
+   "collectionName": "Morning Signal",
+   "artistName": "Ada Lumen",
+   "feedUrl": "asset:podcast-fixture/feed-1.xml",
+   "artworkUrl600": "",
+   "primaryGenreName": "Technology",
+   "trackCount": 3,
+   "collectionViewUrl": "https://example.org/signal"
+  },
+  {
+   "kind": "podcast",
+   "collectionId": 1002,
+   "collectionName": "The Long Walk",
+   "artistName": "Field Notes Collective",
+   "feedUrl": "asset:podcast-fixture/feed-2.xml",
+   "artworkUrl600": "",
+   "primaryGenreName": "Society & Culture",
+   "trackCount": 2,
+   "collectionViewUrl": "https://example.org/walk"
+  }
+ ]
+}

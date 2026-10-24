@@ -25,10 +25,10 @@ host = "https://daybrite.github.io/Day-Tunes"
 #
 # The app's localized store/ name titles the site; set `title` only to differ from it.
 # title = "Day Tunes"
-tagline = "Internet radio, everywhere"
+tagline = "Music, radio, and podcasts"
 
 # Brand accent (any CSS color) and starting theme: light | dark | system.
-accent-color = "#3B82F6"
+accent-color = "#F25C38"
 # default-theme = "system"
 
 # Which platform the picker preselects (ios, android, macos, windows, linux-gtk, linux-qt,

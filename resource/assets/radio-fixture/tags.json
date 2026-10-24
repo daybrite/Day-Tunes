@@ -1,0 +1,50 @@
+[
+ {
+  "name": "eclectic",
+  "stationcount": 4
+ },
+ {
+  "name": "public radio",
+  "stationcount": 3
+ },
+ {
+  "name": "indie",
+  "stationcount": 2
+ },
+ {
+  "name": "jazz",
+  "stationcount": 2
+ },
+ {
+  "name": "ambient",
+  "stationcount": 1
+ },
+ {
+  "name": "chillout",
+  "stationcount": 1
+ },
+ {
+  "name": "classical",
+  "stationcount": 1
+ },
+ {
+  "name": "culture",
+  "stationcount": 1
+ },
+ {
+  "name": "downtempo",
+  "stationcount": 1
+ },
+ {
+  "name": "electronic",
+  "stationcount": 1
+ },
+ {
+  "name": "rock",
+  "stationcount": 1
+ },
+ {
+  "name": "talk",
+  "stationcount": 1
+ }
+]

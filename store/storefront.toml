@@ -1,0 +1,32 @@
+# Store listing metadata that is not localized. The localized text lives in store/<locale>/,
+# one directory per locale in resource/locales/, and `day lint` checks that the two agree.
+#
+# `day store stage` turns this tree into the layouts App Store Connect and Google Play expect,
+# under build/day/fastlane/<target>/, ready for `fastlane deliver` / `fastlane supply`.
+# bundle-id: omitted, because `day store` falls back to Day.toml [app] id, which is where
+# the id is set. Set it here only to publish under an id the app does not build with.
+
+# apple-category = "DEVELOPER_TOOLS"    # App Store primary category
+# (Google Play's category is set in the Play Console; `supply` cannot write it.)
+# copyright = "2026 Day Tunes"
+# contact-email = "support@example.com" # where a store reviewer writes back
+# review-notes = "How to exercise the app, for the store reviewer."
+
+[storefront.metadata]
+name = "Day Tunes"
+subtitle = "Music, radio, and podcasts"
+short = "Your music, internet radio, and podcasts in one player."
+description = """
+Day Tunes is a music player for the songs you own, the world's radio, and the podcasts you follow.
+
+Add a folder of music or import files, and the library sorts itself into songs, albums, artists, and genres, with the cover art your files carry. Make playlists, queue what plays next, shuffle and repeat, and pick up where you left off.
+
+Radio browses the community-run Radio Browser index: the top stations, trending ones, and everything by country, tag, or language. Keep the stations you like, and see what each one is playing as it plays.
+
+Podcasts come from the Apple Podcasts chart and search, or from any feed URL. Episodes refresh on their own, remember where you stopped, and download for listening offline.
+
+Playback uses your platform's own media engine, keeps going in the background, and shows up on the lock screen and the media keys. Sign in to Last.fm, Libre.fm, or ListenBrainz and every listen is scrobbled, including the songs a radio station names.
+"""
+keywords = ["music", "player", "radio", "internet radio", "podcasts", "library", "playlists", "scrobble", "last.fm", "listenbrainz"]
+release-notes = "A new player: a local music library with albums, artists, genres and playlists; internet radio from the Radio Browser index; podcasts from the Apple Podcasts chart or any feed, with downloads and resume; Up Next, shuffle and repeat; system now-playing controls; and scrobbling to Last.fm, Libre.fm or ListenBrainz."
+privacy-url = "https://daybrite.github.io/Day-Tunes/privacy/"

@@ -1,215 +1,199 @@
-# A dayscript walkthrough (https://daybrite.dev/docs/dayscript): drives the running app by
-# element id and route, on any target. It is both the app's test and its demo: every feature
-# the app ships is exercised here, in the order a listener would meet them.
+# A dayscript walkthrough (https://daybrite.dev/docs/how-to/dayscript): drives the running app by
+# element id and route, on any target. It is both the app's test and its demo: the library,
+# playlists, radio, podcasts, the queue and settings, in the order a listener meets them.
 #
-#     day launch -t macos-appkit --env TUNES_CATALOG_URL=asset:catalog-fixture \
+#     day launch -t macos-appkit \
+#         --env TUNES_LIBRARY_IMPORT=asset:library-fixture \
+#         --env TUNES_RADIO_INDEX=asset:radio-fixture \
+#         --env TUNES_PODCAST_DIRECTORY=asset:podcast-fixture \
 #         --script dayscript/walkthrough.yaml
 #
-# This script never depends on the network. The catalog comes from the small copy
-# bundled under resource/assets/catalog-fixture (built by scripts/build-fixture.py from the
-# published file, same schema), through the same manifest-check-download-attach path a real
-# launch takes; `TUNES_CATALOG_URL` names where the manifest is. The script opens station
-# pages and presses Play, but asserts nothing about what the stream did: a CI runner may have
-# no route to a station, and the state line reports what the stream did. Steps that need a window
-# toolbar or a menu bar carry `skip_on:` for the platforms that have neither.
+# The three variables point every source at the fixtures bundled under resource/assets/
+# (scripts/build-fixtures.py makes them), so nothing here needs the network. The library
+# fixture is a dozen tagged WAV tones, imported at launch through the same path Import Files…
+# takes. Radio and podcast enclosures name public streams; the script asserts nothing about
+# live playback. Steps that need a desktop sidebar carry `skip_on:` for the phones, whose
+# tabs and stacks have their own steps under `only_on:`. The web build has no local library
+# (a browser has no files to scan), so the Library section skips `dom`.
 flow:
-  # --- The catalog arrives ------------------------------------------------------------------
-  # On a first launch the lists wait for the catalog: the download panel shows in their place
-  # until the file is verified and attached. On a later launch the copy on disk attaches at
-  # once and the panel never shows, so nothing here asserts on it.
   - wait_for: { id: nav, within: 60 }
-  - navigate: { route: browse }
-  - assert_route: { route: browse }
-  - wait_for: { id: browse_list, within: 60 }
-  - screenshot: browse
 
-  # Selecting a row opens its page: beside the list on a desktop, pushed over it on a phone.
-  - select: { id: browse_list, index: 0 }
-  - wait_for: { id: station_name }
-  - assert_visible: { id: station_play }
-  - assert_visible: { id: station_favorite }
+  # --- Library ----------------------------------------------------------------------------------
+  # The fixture imports at launch; the Songs list fills as the rows land.
+  - navigate: { route: songs, skip_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: song_list, within: 60, skip_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: songs_count, within: 60, skip_on: [uikit, mdc, arkui, dom] }
+  - screenshot: { name: songs, skip_on: [uikit, mdc, arkui, dom] }
+
+  # On a phone the Library tab is a list of shelves; Songs is one of them.
+  - navigate: { route: library, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: shelf_root, within: 60, only_on: [uikit, mdc, arkui] }
+  - screenshot: { name: library-tab, only_on: [uikit, mdc, arkui] }
+  - select: { id: shelf_root, index: 3, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: song_list, within: 60, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: songs_count, within: 60, only_on: [uikit, mdc, arkui] }
+  - screenshot: { name: songs, only_on: [uikit, mdc, arkui] }
+
+  # Activate the first song: it plays, and the player bar (or the mini player) shows it.
+  - activate: { id: song_list, index: 0, skip_on: [dom] }
+  - wait_for: { id: bar_title, skip_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: mini_player, only_on: [uikit, mdc, arkui] }
+  - pause: { secs: 1, skip_on: [dom] }
+  - screenshot: { name: playing-song, skip_on: [dom] }
+
+  # A desktop click opens the song's page beside the list.
+  - select: { id: song_list, index: 1, skip_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: track_title, skip_on: [uikit, mdc, arkui, dom] }
+  - assert_visible: { id: track_play, skip_on: [uikit, mdc, arkui, dom] }
+  - screenshot: { name: song, skip_on: [uikit, mdc, arkui, dom] }
+  - tap: { id: track_play_next, skip_on: [uikit, mdc, arkui, dom] }
+  - wait_idle: { skip_on: [dom] }
+
+  # Albums as a wall of covers; one opens onto its tracks.
+  - navigate: { route: albums, skip_on: [uikit, mdc, arkui, dom] }
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: shelf_root, only_on: [uikit, mdc, arkui] }
+  - select: { id: shelf_root, index: 2, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: album_grid, skip_on: [dom] }
+  # The tile's key is the album's group key, a hash of its artist and title; the fixture's
+  # "Morning Light" by Aurora Fields (src/library.rs `fixture_ids_match_the_walkthrough`).
+  - wait_for: { id: "album_tile:1311233589162823106", skip_on: [dom] }
+  - screenshot: { name: albums, skip_on: [dom] }
+  - tap: { id: "album_tile:1311233589162823106", skip_on: [dom] }
+  - wait_for: { id: album_page, skip_on: [dom] }
+  - wait_for: { id: album_tracks, skip_on: [dom] }
+  - screenshot: { name: album, skip_on: [dom] }
+  - tap: { id: group_play, skip_on: [dom] }
+  - wait_idle: { skip_on: [dom] }
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+
+  # Artists.
+  - navigate: { route: artists, skip_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: shelf_root, only_on: [uikit, mdc, arkui] }
+  - select: { id: shelf_root, index: 1, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: artist_list, skip_on: [dom] }
+  - select: { id: artist_list, index: 0, skip_on: [dom] }
+  - wait_for: { id: artist_page, skip_on: [dom] }
+  - screenshot: { name: artist, skip_on: [dom] }
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+
+  # A playlist, made from the menu bar on a desktop and from the Playlists shelf on a phone.
+  - menu: { id: new_playlist, skip_on: [uikit, mdc, arkui, dom] }
+  - wait_for: { id: shelf_root, only_on: [uikit, mdc, arkui] }
+  - select: { id: shelf_root, index: 0, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: playlists_list, only_on: [uikit, mdc, arkui] }
+  - toolbar: { item: tb_new_playlist, only_on: [uikit, mdc, arkui] }
+  - assert_presented: { skip_on: [dom] }
+  - respond: { text: "Morning", skip_on: [dom] }
+  - wait_for: { id: playlist_list, skip_on: [dom] }
+  - screenshot: { name: playlist, skip_on: [dom] }
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+
+  # --- Up Next --------------------------------------------------------------------------------------
+  - navigate: { route: queue, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: queue_list, skip_on: [uikit, mdc, arkui] }
+  - screenshot: { name: queue, skip_on: [uikit, mdc, arkui] }
+  - navigate: { route: playing, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: playing_title, only_on: [uikit, mdc, arkui] }
+  - screenshot: { name: now-playing, only_on: [uikit, mdc, arkui] }
+  - tap: { id: playing_toggle, only_on: [uikit, mdc, arkui] }
+  - wait_idle: {}
+
+  # --- Radio ------------------------------------------------------------------------------------------
+  # Browse the index: the top stations, a country, a tag; keep one.
+  - navigate: { route: browse, skip_on: [uikit, mdc, arkui] }
+  - navigate: { route: radio, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: radio_cuts, only_on: [uikit, mdc, arkui] }
+  - screenshot: { name: radio-tab, only_on: [uikit, mdc, arkui] }
+  - select: { id: radio_cuts, index: 0, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: browse_list, within: 30 }
+  # Radio Paradise, the fixture's most voted station (uuid f2).
+  - wait_for: { id: "station_row:619401112520371537", within: 30 }
+  - screenshot: radio-top
+  - select: { id: browse_list, index: 0, skip_on: [uikit, mdc, arkui] }
+  - activate: { id: browse_list, index: 0, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: station_name, skip_on: [uikit, mdc, arkui] }
+  - assert_visible: { id: station_play, skip_on: [uikit, mdc, arkui] }
+  - tap: { id: station_favorite, skip_on: [uikit, mdc, arkui] }
+  - tap: { id: station_play, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: station_state, skip_on: [uikit, mdc, arkui] }
+  - pause: { secs: 2 }
   - screenshot: station
-
-  # Play. The state line appears for the station on air whatever the stream does.
-  - tap: { id: station_play }
-  - wait_for: { id: station_state }
-  - pause: { secs: 3 }
-  - screenshot: playing-station
-
-  # Favorite it, so the Library has something to show below.
-  - tap: { id: station_favorite }
+  - tap: { id: "station_heart:619401112520371537", only_on: [uikit, mdc, arkui] }
   - wait_idle: {}
-
-  # The listener's own words: a note, and a tag the Library can filter by. Both live in the
-  # app's store beside the downloaded catalog, keyed by the station's uuid.
-  - input: { id: station_note, text: "Good in the morning." }
-  - wait_idle: {}
-  - input: { id: station_tag_field, text: "morning" }
-  - tap: { id: station_tag_add }
-  - wait_for: { id: station_user_tag:morning }
-  - screenshot: station-notes
-
-  # Back to the list on the shapes that pushed the page; a wide window has both and passes.
+  - toolbar: { item: tb_radio_cut, index: 1, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: country_list, within: 30, skip_on: [uikit, mdc, arkui] }
+  - screenshot: { name: countries, skip_on: [uikit, mdc, arkui] }
+  - select: { id: country_list, index: 0, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: browse_list, within: 30, skip_on: [uikit, mdc, arkui] }
+  - nav_back: { skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: country_list, skip_on: [uikit, mdc, arkui] }
+  - toolbar: { item: tb_radio_cut, index: 2, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: tag_list, within: 30, skip_on: [uikit, mdc, arkui] }
+  - select: { id: tag_list, index: 0, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: browse_list, within: 30, skip_on: [uikit, mdc, arkui] }
+  - nav_back: { skip_on: [uikit, mdc, arkui] }
+  - toolbar: { item: tb_radio_cut, index: 0, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: browse_list, skip_on: [uikit, mdc, arkui] }
   - nav_back: { only_on: [uikit, mdc, arkui] }
-  - wait_idle: { only_on: [uikit, mdc, arkui] }
-  - assert_route: { route: browse, only_on: [uikit, mdc, arkui] }
 
-  # --- Browse: countries, genres, languages -------------------------------------------------
-  # The cut is a segmented control: in the window toolbar where the toolkit places the station
-  # list in a pane of its own, and the page toolbar on other targets. A pick pushes the cut's stations as a real page, so the platform's back returns
-  # to the cut (https://daybrite.dev/docs/navigation).
-  - toolbar: { item: tb_cut, index: 1 }
-  - wait_for: { id: country_list }
-  - screenshot: countries
-  - select: { id: country_list, index: 0 }
-  - wait_for: { id: browse_list }
-  - screenshot: country
-  - nav_back: {}
-  - wait_for: { id: country_list }
-  - toolbar: { item: tb_cut, index: 2 }
-  - wait_for: { id: tag_list }
-  - screenshot: genres
-  - select: { id: tag_list, index: 0 }
-  - wait_for: { id: browse_list }
-  - screenshot: genre
-  - nav_back: {}
-  - wait_for: { id: tag_list }
-  - toolbar: { item: tb_cut, index: 3 }
-  - wait_for: { id: language_list }
-  - select: { id: language_list, index: 0 }
-  - wait_for: { id: browse_list }
-  - nav_back: {}
-  - wait_for: { id: language_list }
-  - toolbar: { item: tb_cut, index: 0 }
-  - wait_for: { id: browse_list }
+  # The kept station shows under Stations.
+  - navigate: { route: stations, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: favorite_stations }
+  - screenshot: stations
 
-  # --- Search ---------------------------------------------------------------------------------
-  - navigate: { route: search }
-  - assert_route: { route: search }
-  - wait_for: { id: search_field }
-  - assert_visible: { id: search_hint }
-  - input: { id: search_field, text: "jazz" }
+  # --- Podcasts -------------------------------------------------------------------------------------
+  # Discover lists the chart; a show previews, then subscribes; its episodes arrive.
+  - navigate: { route: discover, skip_on: [uikit, mdc, arkui] }
+  - navigate: { route: podcasts, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: pod_root, only_on: [uikit, mdc, arkui] }
+  - select: { id: pod_root, index: 0, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: top_shows, within: 30 }
+  - wait_for: { id: "directory_row:1001", within: 30 }
+  - screenshot: discover
+  - select: { id: top_shows, index: 0 }
+  - wait_for: { id: preview_title }
+  - wait_for: { id: preview_episodes, within: 30 }
+  - screenshot: preview
+  - tap: { id: preview_subscribe }
+  - wait_for: { id: show_title, within: 30 }
+  - wait_for: { id: show_episodes }
+  - screenshot: show
+  - activate: { id: show_episodes, index: 0 }
   - wait_idle: {}
-  - wait_for: { id: search_list }
-  - screenshot: search
-  - select: { id: search_list, index: 0 }
-  - wait_for: { id: station_name }
-  - screenshot: search-station
   - nav_back: { only_on: [uikit, mdc, arkui] }
-  - wait_idle: { only_on: [uikit, mdc, arkui] }
-  # A search with no matches says so rather than showing an empty pane.
-  - input: { id: search_field, text: "zzzzqqqqxxxx" }
-  - wait_idle: {}
-  - wait_for: { id: search_none }
-  - input: { id: search_field, text: "" }
+  - nav_back: { only_on: [uikit, mdc, arkui] }
+
+  # Every subscription's episodes, newest first.
+  - navigate: { route: episodes, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: episode_list }
+  - wait_for: { id: "episode_row:8982385423799103407" }
+  - select: { id: episode_list, index: 0, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: episode_title, skip_on: [uikit, mdc, arkui] }
+  - screenshot: episode
+  - tap: { id: episode_mark, skip_on: [uikit, mdc, arkui] }
   - wait_idle: {}
 
-  # --- Library --------------------------------------------------------------------------------
-  - navigate: { route: library }
-  - assert_route: { route: library }
-  - wait_for: { id: library_list }
-  - screenshot: favorites
-  # The tag filter appears once there is a tag; the favorite above carries "morning".
-  - wait_for: { id: library_tag }
-  - select: { id: library_tag, index: 1 }
-  - wait_idle: {}
-  - screenshot: favorites-tagged
-  - select: { id: library_tag, index: 0 }
-  - wait_idle: {}
-  - select: { id: library_cut, index: 1 }
-  - wait_idle: {}
-  - screenshot: recents
-  - select: { id: library_cut, index: 0 }
-  - wait_idle: {}
+  # --- History and Settings -----------------------------------------------------------------------
+  - navigate: { route: history, skip_on: [uikit, mdc, arkui] }
+  - wait_for: { id: history_list, skip_on: [uikit, mdc, arkui] }
+  - screenshot: { name: history, skip_on: [uikit, mdc, arkui] }
 
-  # --- Now Playing ----------------------------------------------------------------------------
-  # The transport: Previous and Next walk the list the station was picked from (the Top list
-  # here), the star favorites it, the volume is one slider.
-  - navigate: { route: playing }
-  - assert_route: { route: playing }
-  - wait_for: { id: playing_name }
-  - assert_visible: { id: playing_toggle }
-  - assert_visible: { id: playing_volume }
-  - set_value: { id: playing_volume, value: 0.5 }
-  - screenshot: now-playing
-  - tap: { id: playing_next }
-  - wait_idle: {}
-  - pause: { secs: 2 }
-  - screenshot: now-playing-next
-  - tap: { id: playing_previous }
-  - wait_idle: {}
-  # Pause, then start the same station over from the transport.
-  - tap: { id: playing_toggle }
-  - wait_idle: {}
-  - tap: { id: playing_toggle }
-  - wait_idle: {}
-  - pause: { secs: 2 }
-  - tap: { id: playing_stop }
-  - wait_idle: {}
-
-  # --- Adaptive navigation --------------------------------------------------------------------
-  # The same host, re-presented. What matters is that the selection survives it.
-  - navigate: { route: browse }
-  - wait_idle: {}
-  - size_class: { width: compact }
-  - wait_idle: {}
-  - assert_route: { route: browse }
-  - screenshot: compact
-  - size_class: { width: expanded }
-  - wait_idle: {}
-  - assert_route: { route: browse }
-  - size_class: { width: auto }
-  - wait_idle: {}
-
-  # --- The desktop transport ------------------------------------------------------------------
-  # Play/pause and Stop in the window toolbar, and the same commands in the Playback menu.
-  - navigate: { route: browse }
-  - select: { id: browse_list, index: 1 }
-  - wait_for: { id: station_play }
-  - tap: { id: station_play }
-  - wait_idle: {}
-  - toolbar: { item: tb_play, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
-  - wait_idle: {}
-  - toolbar: { item: tb_next, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
-  - wait_idle: {}
-  - toolbar: { item: tb_stop, skip_on: [uikit, mdc, arkui, dom, gtk, qt] }
-  - wait_idle: {}
-  - screenshot: toolbar
-
-  # --- Settings -------------------------------------------------------------------------------
-  # The shared surface (https://daybrite.dev/docs/settings): a window the App menu opens on a
-  # desktop, a section of the navigation on the phones. `settings` reaches the General page on
-  # both; `settings/catalog` pushes the Station catalog page on a phone, which says what is
-  # installed and lets the listener check for an update. (A desktop shows that group as the
-  # window's second tab, which no route this app declares can select, so the check runs on the
-  # phones only.)
-  - navigate: { route: settings }
-  - navigate: { route: settings/general, only_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: language_picker }
+  # Settings: the library group on a phone, the window on a desktop.
+  - navigate: { route: settings/library }
+  - wait_for: { id: pref_tracks }
   - screenshot: { name: settings, window: day.preferences, skip_on: [uikit, mdc, arkui, dom] }
   - screenshot: { name: settings, only_on: [uikit, mdc, arkui, dom] }
-  - close_window: { window: day.preferences, skip_on: [uikit, mdc, arkui, dom] }
-  - navigate: { route: settings/catalog, only_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: catalog_installed, only_on: [uikit, mdc, arkui, dom] }
-  - tap: { id: catalog_check, only_on: [uikit, mdc, arkui, dom] }
-  - wait_idle: { only_on: [uikit, mdc, arkui, dom] }
-  - screenshot: { name: settings-catalog, only_on: [uikit, mdc, arkui, dom] }
+  - close_window: { window: day.preferences, skip_on: [uikit, mdc, arkui] }
+  - navigate: { route: settings/scrobbling, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: pref_service, only_on: [uikit, mdc, arkui] }
+  - screenshot: { name: settings-scrobbling, only_on: [uikit, mdc, arkui] }
 
-  # Tidy: the tag and the favorite come off again, so a second run on the same store starts
-  # where this one did. Through Browse, since the Library empties as the favorite goes.
-  - navigate: { route: browse }
-  - wait_for: { id: browse_list }
-  - select: { id: browse_list, index: 0 }
-  - wait_for: { id: station_user_tag:morning }
-  - tap: { id: station_user_tag:morning }
-  - wait_idle: {}
-  - tap: { id: station_favorite }
-  - wait_idle: {}
-  - nav_back: { only_on: [uikit, mdc, arkui] }
-  - wait_idle: { only_on: [uikit, mdc, arkui] }
-
-  # Leave the app quiet: nothing streaming after the walkthrough.
-  - navigate: { route: playing }
-  - wait_for: { id: playing_stop }
-  - tap: { id: playing_stop }
+  # Back where the script started, so a second script in the same launch finds its page.
+  - navigate: { route: songs, skip_on: [uikit, mdc, arkui, dom] }
+  - navigate: { route: stations, only_on: [dom] }
+  - navigate: { route: library, only_on: [uikit, mdc, arkui] }
   - wait_idle: {}

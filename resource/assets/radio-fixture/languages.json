@@ -1,0 +1,14 @@
+[
+ {
+  "name": "english",
+  "stationcount": 4
+ },
+ {
+  "name": "french",
+  "stationcount": 2
+ },
+ {
+  "name": "german",
+  "stationcount": 2
+ }
+]

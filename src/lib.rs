@@ -1,584 +1,348 @@
-//! Day Tunes, a [Day](https://daybrite.dev) internet-radio app. `root()` sets the app up once
-//! and opens the first window; `window_shell` is one window's UI, shared by every platform and
-//! by File ▸ New Window. The station catalog, its sync, and the player are app-wide ([`App`]);
-//! what a window is looking at is per window ([`Scene`]).
+//! Day Tunes, a [Day](https://daybrite.dev) music player: the listener's own files, internet
+//! radio, and podcasts, in one library. `root()` sets the app up once and opens the first
+//! window; `window_shell` is one window's UI, built again for every File ▸ New Window.
 //!
-//! The catalog is the Tune Out project's published `stations.sqlite`, kept as a local copy
-//! (src/sync.rs) and read in place (src/catalog.rs). The listener's own rows live beside it.
+//! The store, the radio index, the podcast directory, scrobbling and the transport are
+//! app-wide ([`App`]); what a window is looking at is per window ([`Scene`]). A desktop window
+//! is the three-pane shape (sources, list, detail) over a player bar; a phone is five tabs,
+//! each a stack, with a mini player above the tab bar.
 
 use day::prelude::*;
-use day_piece_media::{PlaybackState, StreamMetadata, media};
 use day_piece_settings::prelude::*;
 
-mod catalog;
-mod pages;
-mod sync;
-use crate::catalog::{Scope, Station};
-use crate::pages::*;
-use crate::sync::Sync;
+pub mod library;
+pub mod pages;
+pub mod podcasts;
+pub mod radio;
+pub mod scrobble;
+pub mod transport;
+
+use crate::library::Library;
+use crate::podcasts::Podcasts;
+use crate::radio::{Browse, Radio};
+use crate::scrobble::Scrobbling;
+use crate::transport::{Item, Transport};
+use pages::{PodRoute, RadioRoute, ShelfRoute};
 
 // The mobile / embedded entry point; a plain cargo desktop build enters through src/main.rs.
 day::day_start!(options: window(), root);
 
 /// The window every entry point opens: the generated options carry the locale catalog, the
-/// localized title and the version (https://daybrite.dev/docs/localization); the size is a
-/// desktop default, mobile fills the screen regardless.
+/// localized title and the version; the size is a desktop default, mobile fills the screen.
 pub fn window() -> day::WindowOptions {
-    res::window_options().size(1100.0, 700.0)
+    res::window_options().size(1180.0, 760.0)
 }
 
-// Typed constants for everything under `resource/` (https://daybrite.dev/docs/resources).
+// Typed constants for everything under `resource/` (https://daybrite.dev/docs/how-to/resources).
 day::resources!();
 
-/// The volume slider's `day::prefs` key.
-const VOLUME_KEY: &str = "app.volume";
+/// The radio index server of the listener's choice (Settings); empty picks one.
+pub static RADIO_SERVER: Pref<String> = Pref::new("radio.server", String::new);
+/// The podcast directory's storefront.
+pub static PODCAST_COUNTRY: Pref<String> = Pref::new("podcasts.country", || "us".to_string());
+/// The launch-time library, for scripts: `TUNES_LIBRARY_IMPORT=asset:library-fixture`.
+pub const LIBRARY_IMPORT_ENV: &str = "TUNES_LIBRARY_IMPORT";
+/// Refresh subscriptions at launch.
+pub static PODCAST_REFRESH_AT_LAUNCH: Pref<bool> = Pref::new("podcasts.refresh_at_launch", || true);
 
-day::routes! {
-    /// The app's sections, typed (https://daybrite.dev/docs/navigation). Now Playing sits in
-    /// the middle of the tab bar, the way a music app's transport does.
-    pub(crate) enum Section {
-        Browse => "browse",
-        Search => "search",
-        Playing => "playing",
-        Library => "library",
-        Settings => "settings",
-    }
-}
-
-/// Whether this platform has a menu bar (https://daybrite.dev/docs/menus): the desktop shape,
-/// where the transport rides the window's toolbar.
+/// Whether this platform has a menu bar: the desktop shape.
 pub(crate) fn has_menu_bar() -> bool {
     capability(Cap::AppMenu) != Support::Unsupported
 }
 
-/// Whether this platform has window-level chrome that persists across pages
-/// (https://daybrite.dev/docs/toolbars), which decides whether the transport belongs there or
-/// in the Now Playing page. It no longer decides whether a command can be shown: a toolbar item
-/// declared on a page rides that page's chrome on every platform.
-pub(crate) fn has_toolbar() -> bool {
-    capability(Cap::Toolbar) != Support::Unsupported
+/// Whether this is a phone-shaped platform: tabs, stacks, a mini player.
+pub(crate) fn is_phone() -> bool {
+    capability(Cap::AppMenu) == Support::Unsupported
 }
 
-/// The one player, shared by every window: which station is on, what the native player is
-/// doing, what the stream says it is playing, and the triggers that drive it. `Copy`, because
-/// every field is a handle.
-#[derive(Clone, Copy)]
-pub(crate) struct Player {
-    /// The station on air, or the last one asked for: a copy of its catalog row, so the
-    /// transport and the window title need no lookup, and keep their station through a
-    /// catalog update, whose rowids owe the old ones nothing.
-    pub current: Signal<Option<Station>>,
-    /// The stream the media piece is bound to; `load` re-reads it.
-    pub url: Signal<String>,
-    /// What the native player reports (https://daybrite.dev/docs/media).
-    pub state: Signal<PlaybackState>,
-    /// What the stream says it is playing: the ICY `StreamTitle` or HLS ID3, parsed into
-    /// title / artist / album (https://daybrite.dev/docs/media). `None` until it says.
-    pub track: Signal<Option<StreamMetadata>>,
-    /// The stations around the one on air: the list it was started from, by uuid, so
-    /// Previous and Next step through that list (the genre, the search, the favorites).
-    pub queue: Signal<Vec<Vec<u8>>>,
-    /// `0.0..=1.0`, persisted.
-    pub volume: Signal<f64>,
-    pub play: Trigger,
-    pub pause: Trigger,
-    pub stop: Trigger,
-    pub load: Trigger,
+/// The app's sections. A desktop sidebar lists the first group; a phone's tabs the second.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Section {
+    Songs,
+    Albums,
+    Artists,
+    Genres,
+    RecentlyAdded,
+    History,
+    Playlist(u64),
+    Stations,
+    RadioBrowse,
+    Episodes,
+    Shows,
+    Discover,
+    Queue,
+    // Phone tabs.
+    Shelf,
+    Radio,
+    Podcasts,
+    Playing,
+    Settings,
 }
 
-impl Player {
-    fn new() -> Player {
-        let volume = day::prefs::get(VOLUME_KEY)
-            .and_then(|v| v.parse::<f64>().ok())
-            .map_or(0.85, |v| v.clamp(0.0, 1.0));
-        Player {
-            current: Signal::new(None),
-            url: Signal::new(String::new()),
-            state: Signal::new(PlaybackState::Idle),
-            track: Signal::new(None),
-            queue: Signal::new(Vec::new()),
-            volume: Signal::new(volume),
-            play: Trigger::new(),
-            pause: Trigger::new(),
-            stop: Trigger::new(),
-            load: Trigger::new(),
+impl Route for Section {
+    fn key(&self) -> String {
+        match self {
+            Section::Songs => "songs".into(),
+            Section::Albums => "albums".into(),
+            Section::Artists => "artists".into(),
+            Section::Genres => "genres".into(),
+            Section::RecentlyAdded => "recent".into(),
+            Section::History => "history".into(),
+            Section::Playlist(id) => format!("playlist-{id}"),
+            Section::Stations => "stations".into(),
+            Section::RadioBrowse => "browse".into(),
+            Section::Episodes => "episodes".into(),
+            Section::Shows => "shows".into(),
+            Section::Discover => "discover".into(),
+            Section::Queue => "queue".into(),
+            Section::Shelf => "library".into(),
+            Section::Radio => "radio".into(),
+            Section::Podcasts => "podcasts".into(),
+            Section::Playing => "playing".into(),
+            Section::Settings => "settings".into(),
         }
     }
-
-    /// Start `station` from `url`, the one path every "play this" command takes. `queue` is
-    /// the list the station was picked from (empty keeps the current one), for Previous and
-    /// Next.
-    pub fn play_station(self, station: Station, url: String, queue: Vec<Vec<u8>>) {
-        info!(
-            "playing {} ({})",
-            station.name,
-            catalog::uuid_text(&station.uuid)
-        );
-        App::app().catalog.touch_recent(&station.uuid);
-        if !queue.is_empty() {
-            self.queue.set(queue);
-        }
-        self.current.set(Some(station));
-        self.url.set(url);
-        // The piece reads `url` when the trigger fires, so the order above matters.
-        self.load.notify();
+    fn from_key(key: &str) -> Option<Self> {
+        Some(match key {
+            "songs" => Section::Songs,
+            "albums" => Section::Albums,
+            "artists" => Section::Artists,
+            "genres" => Section::Genres,
+            "recent" => Section::RecentlyAdded,
+            "history" => Section::History,
+            "stations" => Section::Stations,
+            "browse" => Section::RadioBrowse,
+            "episodes" => Section::Episodes,
+            "shows" => Section::Shows,
+            "discover" => Section::Discover,
+            "queue" => Section::Queue,
+            "library" => Section::Shelf,
+            "radio" => Section::Radio,
+            "podcasts" => Section::Podcasts,
+            "playing" => Section::Playing,
+            "settings" => Section::Settings,
+            other => Section::Playlist(other.strip_prefix("playlist-")?.parse().ok()?),
+        })
     }
-
-    /// Play/pause: what the transport button and the menu item do. A stopped or failed player
-    /// starts its station over rather than resuming nothing.
-    pub fn toggle(self) {
-        match self.state.get_untracked() {
-            PlaybackState::Playing | PlaybackState::Loading => self.pause.notify(),
-            PlaybackState::Paused => self.play.notify(),
-            PlaybackState::Idle | PlaybackState::Ended | PlaybackState::Error(_) => {
-                if self.current.get_untracked().is_some() && !self.url.get_untracked().is_empty() {
-                    self.load.notify();
-                }
-            }
-        }
-    }
-
-    /// Where the station on air sits in the queue (tracked).
-    fn position(self) -> Option<usize> {
-        let uuid = self.current_uuid()?;
-        self.queue.with(|q| q.iter().position(|u| *u == uuid))
-    }
-
-    pub fn has_previous(self) -> bool {
-        self.position().is_some_and(|i| i > 0)
-    }
-
-    pub fn has_next(self) -> bool {
-        let len = self.queue.with(|q| q.len());
-        self.position().is_some_and(|i| i + 1 < len)
-    }
-
-    /// Move `delta` stations along the queue (−1 previous, +1 next) and play the one there.
-    pub fn step(self, delta: isize) {
-        let app = App::app();
-        let Some(pos) = untrack(|| self.position()) else {
-            return;
-        };
-        let target = pos as isize + delta;
-        if target < 0 {
-            return;
-        }
-        let Some(uuid) = self
-            .queue
-            .with_untracked(|q| q.get(target as usize).cloned())
-        else {
-            return;
-        };
-        if let Some(s) = app.catalog.station_by_uuid(&uuid) {
-            let url = stream_url(&s);
-            self.play_station(s, url, Vec::new());
-        }
-    }
-
-    pub fn is_on_air(self) -> bool {
-        self.state.get().is_active()
-    }
-
-    /// The uuid of the station on air (tracked).
-    pub fn current_uuid(self) -> Option<Vec<u8>> {
-        self.current.with(|s| s.as_ref().map(|s| s.uuid.clone()))
-    }
-
-    /// Whether `uuid` names the station on air (tracked).
-    pub fn is_current(self, uuid: &[u8]) -> bool {
-        self.current
-            .with(|s| s.as_ref().is_some_and(|s| s.uuid == uuid))
-    }
-
-    /// Whether the station on air is a favorite (tracked).
-    pub fn is_favorite(self) -> bool {
-        self.current_uuid()
-            .is_some_and(|u| App::app().catalog.is_favorite(&u))
-    }
-
-    /// Favorite or unfavorite the station on air.
-    pub fn toggle_favorite(self) {
-        if let Some(uuid) = self
-            .current
-            .with_untracked(|s| s.as_ref().map(|s| s.uuid.clone()))
-        {
-            App::app().catalog.toggle_favorite(&uuid);
-        }
+    fn title(&self) -> String {
+        pages::section_title(self)
     }
 }
 
-/// Everything the process owns: the store, the catalog sync, and the player. One instance,
+/// What the detail pane shows.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Detail {
+    Track(u64),
+    Album(u64),
+    Artist(u64),
+    Genre(u64),
+    /// A station, as the index or the store describes it (a browse result is not a row).
+    Station(library::Station),
+    Episode(u64),
+    Show(u64),
+    /// A directory result, previewed before subscribing.
+    Preview(podcasts::DirectoryShow),
+}
+
+/// Everything the process owns: the store, the sources, the transport. One instance,
 /// created on first use, visible from every window and menu command
-/// (https://daybrite.dev/docs/state).
+/// (https://daybrite.dev/docs/explanation/state).
 #[derive(Clone, Copy)]
-pub(crate) struct App {
+pub struct App {
     /// Leaked once: the store lives as long as the process, and a `'static` reference is what
     /// lets `App` stay `Copy` and ride into every closure like a `Scene` does.
-    pub catalog: &'static catalog::Catalog,
-    pub sync: Sync,
-    pub player: Player,
+    pub library: &'static Library,
+    pub radio: &'static Radio,
+    pub podcasts: &'static Podcasts,
+    pub scrobbling: &'static Scrobbling,
+    pub transport: Transport,
 }
 
 impl Ambient for App {
     fn create() -> Self {
-        let catalog = match catalog::Catalog::open() {
+        let library = match Library::open() {
             Ok(c) => c,
             Err(e) => {
-                // An unwritable data directory is not worth a crash: an in-memory store reads
-                // the same catalog and forgets favorites at exit, and that fallback is logged
-                // as such.
+                // An unwritable data directory is not worth a crash: an in-memory store works
+                // for the session and forgets at exit, and that fallback is logged as such.
                 error!("could not open the store, running in memory: {e}");
-                catalog::Catalog::in_memory()
+                Library::in_memory()
             }
         };
         App {
-            catalog: Box::leak(Box::new(catalog)),
-            sync: Sync::new(),
-            player: Player::new(),
+            library: Box::leak(Box::new(library)),
+            radio: Box::leak(Box::new(Radio::new(&RADIO_SERVER.get_untracked()))),
+            podcasts: Box::leak(Box::new(Podcasts::new(&PODCAST_COUNTRY.get_untracked()))),
+            scrobbling: Box::leak(Box::new(Scrobbling::new())),
+            transport: Transport::new(),
         }
     }
 }
 
-/// Everything one window owns: where it is looking (https://daybrite.dev/docs/state).
+/// Everything one window owns: where it is looking (https://daybrite.dev/docs/explanation/state).
 #[derive(Clone, Copy)]
-pub(crate) struct Scene {
-    /// Which section the navigation is showing.
+pub struct Scene {
     pub section: Signal<Section>,
-    /// The station the detail pane shows, by its rowid in the attached catalog.
-    pub selected: Signal<Option<u64>>,
-    /// The list the selected station was picked from, by uuid: what the player steps
-    /// through once that station plays.
-    pub queue: Signal<Vec<Vec<u8>>>,
-    /// Whether the detail is showing, on the shapes that show one pane at a time
-    /// (`nav(…).detail_visible` in `window_shell`).
+    /// The detail pane's subject.
+    pub detail: Signal<Option<Detail>>,
+    /// Whether the detail is showing, on the shapes that show one pane at a time.
     pub detail_open: Signal<bool>,
-    /// The Browse pane's cut: 0 top, 1 countries, 2 genres, 3 languages.
-    pub browse_cut: Signal<usize>,
-    /// The Browse drill-down: empty at the cut's own list, one scope deep on a country, genre,
-    /// or language: a real push, with the platform's back (https://daybrite.dev/docs/navigation).
-    pub browse_path: Signal<Vec<Scope>>,
-    /// The Search pane's text.
-    pub query: Signal<String>,
-    /// The Library pane's cut: favorites or recents.
-    pub library_cut: Signal<LibraryCut>,
-    /// The Library's filter by the listener's own tag: `None` is every row.
-    pub library_tag: Signal<Option<String>>,
-    /// The tag being typed on a station page.
-    pub new_tag: Signal<String>,
+    /// The list the detail's subject was picked from, as the queue a Play there starts.
+    pub context: Signal<Vec<Item>>,
+    /// The Songs list's order and filter.
+    pub song_sort: Signal<library::TrackSort>,
+    pub song_query: Signal<String>,
+    /// The desktop radio browse: the cut and the pushed scope.
+    pub radio_cut: Signal<usize>,
+    pub radio_path: Signal<Vec<Browse>>,
+    pub radio_query: Signal<String>,
+    /// The podcast directory search field.
+    pub podcast_query: Signal<String>,
+    /// The phone tabs' stacks.
+    pub shelf_path: Signal<Vec<ShelfRoute>>,
+    /// The Now Playing tab's stack on a phone: a track opened from the queue.
+    pub playing_path: Signal<Vec<ShelfRoute>>,
+    pub radio_tab_path: Signal<Vec<RadioRoute>>,
+    pub pod_path: Signal<Vec<PodRoute>>,
 }
 
 impl Ambient for Scene {
     fn create() -> Self {
         Scene {
-            section: Signal::new(Section::Browse),
-            selected: Signal::new(None),
-            queue: Signal::new(Vec::new()),
+            section: Signal::new(if is_phone() {
+                Section::Shelf
+            } else if pages::has_local_library() {
+                Section::Songs
+            } else {
+                Section::Stations
+            }),
+            detail: Signal::new(None),
             detail_open: Signal::new(false),
-            browse_cut: Signal::new(0),
-            browse_path: Signal::new(Vec::new()),
-            query: Signal::new(String::new()),
-            library_cut: Signal::new(LibraryCut::Favorites),
-            library_tag: Signal::new(None),
-            new_tag: Signal::new(String::new()),
+            context: Signal::new(Vec::new()),
+            song_sort: Signal::new(library::TrackSort::Title),
+            song_query: Signal::new(String::new()),
+            radio_cut: Signal::new(0),
+            radio_path: Signal::new(Vec::new()),
+            radio_query: Signal::new(String::new()),
+            podcast_query: Signal::new(String::new()),
+            shelf_path: Signal::new(Vec::new()),
+            playing_path: Signal::new(Vec::new()),
+            radio_tab_path: Signal::new(Vec::new()),
+            pod_path: Signal::new(Vec::new()),
         }
     }
 }
 
 impl Scene {
-    /// Show `station` in the detail pane: beside the list on a wide window, pushed over it on
-    /// a narrow one; the host decides which (https://daybrite.dev/docs/navigation). `queue` is
-    /// the list it was picked from.
-    pub fn open_from(self, station: u64, queue: Vec<Vec<u8>>) {
-        self.queue.set(queue);
-        self.selected.set(Some(station));
+    /// Show `detail`: beside the list on a wide window, pushed over it on a narrow one.
+    /// `context` is the list it was picked from.
+    pub fn open(self, detail: Detail, context: Vec<Item>) {
+        self.context.set(context);
+        self.detail.set(Some(detail));
         self.detail_open.set(true);
     }
 
-    pub fn clear_selection(self) {
-        self.selected.set(None);
-    }
-
-    /// Jump to a station's page from anywhere (the now-playing page's "Open station").
-    pub fn show(self, station: u64) {
-        self.section.set(Section::Library);
-        self.open_from(station, Vec::new());
+    pub fn close_detail(self) {
+        self.detail.set(None);
+        self.detail_open.set(false);
     }
 }
 
 /// App startup: everything that happens once, however many windows open, and then the first
 /// window's content.
 pub fn root() -> impl Piece {
-    // `info!` and friends need no setup: Day installs a logger at launch.
     info!("Day Tunes starting");
-    // Where `.restore("app.section")` keeps the last section between launches.
     day::prefs::install_nav_store();
-
     let app = App::app();
-    // Settings and About (https://daybrite.dev/docs/settings): appearance and language from
-    // Day's catalog, the Station catalog group (pages.rs), the app's name and version from
-    // Day.toml. A desktop gets the App menu's Settings… and About items and their windows; a
-    // phone the Settings section of the navigation in `window_shell`.
+    app.transport.install();
+    // Settings and About (https://daybrite.dev/docs/reference/settings).
     let prefs = Preferences::new()
-        .about(About::from_manifest().link(day::tr("day-about-website"), "https://daybrite.dev"))
+        .about(
+            About::from_manifest()
+                .tagline(res::str::about_tagline())
+                .link(res::str::day_about_website(), "https://daybrite.dev")
+                .source("https://github.com/daybrite/Day-Tunes"),
+        )
         .group(general_group(res::locales::ALL))
-        .group(catalog_group(app))
+        .group(pages::library_group(app))
+        .group(pages::radio_group(app))
+        .group(pages::podcasts_group(app))
+        .group(pages::scrobbling_group(app))
         .install();
-    // The Source row edits the pref as the listener types; the sync reads it at the next check.
-    sync::BASE.watch(move |base| app.sync.set_base(base));
-    // File ▸ New Window (⌘N / Ctrl+N) and the macOS tab-bar "+": the same shell as the first
-    // window. The player is app-wide, so a second window is another remote for the same
-    // stream (https://daybrite.dev/docs/state).
+    RADIO_SERVER.watch(move |server| app.radio.set_server(server));
+    PODCAST_COUNTRY.watch(move |country| app.podcasts.set_country(country));
     day::register_new_window({
         let prefs = prefs.clone();
         move || window_shell(false, prefs.clone())
     });
-    app_menu(menus());
-
-    // The volume outlives every window, so its persistence is installed once, here.
-    let player = app.player;
-    watch(
-        move || player.volume.get(),
-        |v, _| {
-            day::prefs::set(VOLUME_KEY, &format!("{v:.3}"));
-        },
-    );
-    // The catalog: the copy on disk first, so the lists fill at once, then the publisher's
-    // manifest, and a download when it names a newer file (src/sync.rs).
-    // Let the host finish mounting its first frame before attaching the catalog and
-    // populating the lists. This also keeps mobile startup watchdogs out of catalog work.
+    if has_menu_bar() {
+        app_menu(move || menus(app));
+    }
+    // The chart and the subscriptions, a moment after the first frame; a scripted run also
+    // imports its bundled library here (`TUNES_LIBRARY_IMPORT=asset:library-fixture`).
     day::task(async move {
-        day::sleep(1).await;
-        app.sync.attach_installed(app.catalog);
-        app.sync.check(app.catalog);
+        day::sleep(400).await;
+        if let Some(dir) = day::env(LIBRARY_IMPORT_ENV)
+            .filter(|s| !s.is_empty())
+            .and_then(|s| s.strip_prefix("asset:").map(|s| s.to_string()))
+            && app.library.track_count.get_untracked() == 0
+        {
+            app.library.import_asset_dir(&dir);
+        }
+        app.podcasts.load_top();
+        if PODCAST_REFRESH_AT_LAUNCH.get_untracked() {
+            app.podcasts.refresh_all();
+        }
+        app.scrobbling.flush();
     });
-
     window_shell(true, prefs)
 }
 
 /// One window's UI: the first window's, and every File ▸ New Window's.
-///
-/// `primary` marks the window that owns the route namespace and carries the player itself:
-/// the media piece lives in exactly one tree, and closing that window ends playback.
 fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
     Scene::scoped(move |scene| {
         let app = App::app();
-        let player = app.player;
-        // A section change starts from its list: the station page belongs to the list it was
-        // opened from, and a favorite's pane should not open on a search result.
+        // A section change starts from its list.
         watch(
             move || scene.section.get(),
-            move |_, _| {
-                scene.clear_selection();
-                scene.detail_open.set(false);
-            },
+            move |_, _| scene.close_detail(),
         );
-        // Closing the station page drops the selection with it: the row un-highlights, and where
-        // the page sits beside the list, the back that closed it leaves the empty state behind.
         watch(
             move || scene.detail_open.get(),
             move |open, _| {
                 if !open {
-                    scene.clear_selection();
+                    scene.detail.set(None);
                 }
             },
         );
-        // A cut change starts from the cut's own list: the drill-down belonged to the last one.
         watch(
-            move || scene.browse_cut.get(),
+            move || scene.radio_cut.get(),
             move |_, _| {
-                if !scene.browse_path.get_untracked().is_empty() {
-                    scene.browse_path.set(Vec::new());
+                if !scene.radio_path.get_untracked().is_empty() {
+                    scene.radio_path.set(Vec::new());
                 }
             },
         );
-        // A catalog update re-keys every station: whatever page was open belongs to the old
-        // file, so it closes rather than showing a stranger under the same rowid.
-        watch(
-            move || app.catalog.generation.get(),
-            move |_, _| scene.clear_selection(),
-        );
-        // Name the window after what it plays (https://daybrite.dev/docs/windows).
-        day::window_title(move || {
-            match player.current.with(|s| s.as_ref().map(|s| s.name.clone())) {
-                Some(name) if player.is_on_air() => name,
-                _ => res::str::app_title().format(),
+        day::window_title(move || match app.transport.loaded.get() {
+            Some(l) if app.transport.is_active() => {
+                if l.artist.is_empty() {
+                    l.title
+                } else {
+                    format!("{} · {}", l.title, l.artist)
+                }
             }
+            _ => res::str::app_title().format(),
         });
-        // The transport belongs to the window: it is playing whatever page is showing, so it
-        // rides the window's chrome rather than any page's
-        // (https://daybrite.dev/docs/toolbars). The Browse cut is not here; it belongs to the
-        // Browse list's page, which is where it is now declared (pages.rs).
-        let transport = move || {
-            if !has_menu_bar() {
-                return Vec::new();
-            }
-            let on_air = player.is_on_air();
-            let has_station = player.current_uuid().is_some();
-            let fav = player.is_favorite();
-            vec![
-                toolbar_label(day::id!(tb_now), move || now_playing_line(app))
-                    .placement(ToolbarPlacement::Principal),
-                toolbar_button(day::id!(tb_previous), res::str::playing_previous())
-                    .image(res::vectors::skip_previous)
-                    .tooltip(res::str::playing_previous())
-                    .enabled(player.has_previous())
-                    .action(move || player.step(-1)),
-                toolbar_button(
-                    day::id!(tb_play),
-                    if on_air {
-                        res::str::cmd_pause()
-                    } else {
-                        res::str::cmd_play()
-                    },
-                )
-                .icon(if on_air { Symbol::Pause } else { Symbol::Play })
-                .tooltip(if on_air {
-                    res::str::cmd_pause()
-                } else {
-                    res::str::cmd_play()
-                })
-                .enabled(has_station)
-                .action(move || player.toggle()),
-                toolbar_button(day::id!(tb_next), res::str::playing_next())
-                    .image(res::vectors::skip_next)
-                    .tooltip(res::str::playing_next())
-                    .enabled(player.has_next())
-                    .action(move || player.step(1)),
-                toolbar_button(day::id!(tb_stop), res::str::cmd_stop())
-                    .icon(Symbol::Stop)
-                    .tooltip(res::str::cmd_stop())
-                    .enabled(has_station)
-                    .action(move || player.stop.notify()),
-                toolbar_button(
-                    day::id!(tb_favorite),
-                    if fav {
-                        res::str::cmd_unfavorite()
-                    } else {
-                        res::str::cmd_favorite()
-                    },
-                )
-                .icon(if fav { Symbol::Star } else { Symbol::Bookmark })
-                .tooltip(if fav {
-                    res::str::cmd_unfavorite()
-                } else {
-                    res::str::cmd_favorite()
-                })
-                .enabled(has_station)
-                .action(move || player.toggle_favorite()),
-            ]
-        };
-
-        // A nav is adaptive by default: tabs on a phone, a rail on a tablet, a sidebar on a
-        // desktop (https://daybrite.dev/docs/navigation).
-        let nav = nav(scene.section)
-            .title(res::str::app_title())
-            .toolbar(transport)
-            // The station list as a real content-list pane: its own column where the toolkit
-            // has one, the pushed middle layer on a phone. Now Playing and Settings keep the
-            // whole detail area.
-            .content_list(
-                ContentList::new(content_pane)
-                    .width(360.0)
-                    .only_for(|s: &Section| {
-                        matches!(s, Section::Browse | Section::Search | Section::Library)
-                    })
-                    .detail_visible(scene.detail_open)
-                    .detail_title(move || detail_title(scene)),
-            )
-            .items((
-                item(Section::Browse, res::str::nav_browse())
-                    .icon(res::vectors::nav_browse)
-                    .icon_tint(Color::hex(0x3B82F6))
-                    .page(station_page),
-                item(Section::Search, res::str::nav_search())
-                    .icon(res::vectors::nav_search)
-                    .icon_tint(Color::hex(0x8B5CF6))
-                    .page(station_page),
-                item(Section::Playing, res::str::nav_playing())
-                    .icon(res::vectors::nav_playing)
-                    .icon_tint(Color::hex(0x10B981))
-                    .page(playing_page),
-                item(Section::Library, res::str::nav_library())
-                    .icon(res::vectors::nav_library)
-                    .icon_tint(Color::hex(0xEF4444))
-                    .page(station_page),
-                // Use the desktop's App menu Settings… item; without a menu bar, keep Settings
-                // reachable as a navigation section (https://daybrite.dev/docs/settings).
-                prefs.nav_item(Section::Settings).map(|i| {
-                    i.icon(res::vectors::tab_settings)
-                        .icon_tint(Color::hex(0x6B7280))
-                }),
-            ))
-            .id(day::id!(nav));
-        // Only the first window joins the route namespace and restores where it left off.
-        let nav = if primary {
-            nav.restore("app.section")
+        if is_phone() {
+            pages::phone_shell(scene, prefs, primary).any()
         } else {
-            nav.local()
-        };
-        if primary {
-            // The player itself: sound only, no size, driven by the app's own transport
-            // (https://daybrite.dev/docs/media). It sits under the navigation in the first
-            // window's tree, so it outlives every page change.
-            column((
-                nav.grow(),
-                media(player.url)
-                    .audio_only()
-                    .no_autoplay()
-                    .no_controls()
-                    .volume(player.volume)
-                    .play(player.play)
-                    .pause(player.pause)
-                    .stop(player.stop)
-                    .load(player.load)
-                    .state(player.state)
-                    .metadata(player.track)
-                    .id(day::id!(player)),
-            ))
-            .any()
-        } else {
-            nav.any()
+            pages::desktop_shell(scene, prefs, primary).any()
         }
     })
 }
 
-/// The pushed detail's navigation-bar title: the station it shows, else the section's name.
-fn detail_title(scene: Scene) -> String {
-    let app = App::app();
-    match scene.selected.get().and_then(|id| app.catalog.station(id)) {
-        Some(s) => s.name,
-        None => match scene.section.get() {
-            Section::Search => res::str::nav_search().format(),
-            Section::Library => res::str::nav_library().format(),
-            _ => res::str::nav_browse().format(),
-        },
-    }
-}
-
-/// The toolbar's readout: the station on air, the track when the stream names one, and what
-/// the player says about it.
-fn now_playing_line(app: App) -> String {
-    let player = app.player;
-    let Some(name) = player.current.with(|s| s.as_ref().map(|s| s.name.clone())) else {
-        return String::new();
-    };
-    match player.state.get() {
-        PlaybackState::Loading => {
-            format!("{name} · {}", res::str::playing_state_loading().format())
-        }
-        PlaybackState::Error(_) => format!("{name} · {}", res::str::station_offline().format()),
-        _ => match player.track.get() {
-            Some(t) if !t.raw.is_empty() => format!("{name} · {}", t.raw),
-            _ => name,
-        },
-    }
-}
-
-/// Run a command on the window that currently has FOCUS.
-///
-/// A desktop menu bar is one bar for the whole app, so its items belong to no window and cannot
-/// capture a `Scene`; they resolve the front one when they run (https://daybrite.dev/docs/state).
-#[allow(dead_code)]
+/// Run a command on the window that currently has focus
+/// (https://daybrite.dev/docs/explanation/state).
 fn front(f: impl Fn(Scene) + 'static) -> impl Fn() + 'static {
     move || {
         if let Some(scene) = Scene::focused() {
@@ -587,17 +351,34 @@ fn front(f: impl Fn(Scene) + 'static) -> impl Fn() + 'static {
     }
 }
 
-/// The desktop menu bar; mobile toolkits ignore it (https://daybrite.dev/docs/menus).
-fn menus() -> Vec<MenuEntry> {
-    let app = App::app();
-    let player = app.player;
+/// The desktop menu bar; mobile toolkits ignore it (https://daybrite.dev/docs/reference/menus).
+fn menus(app: App) -> Vec<MenuEntry> {
+    let t = app.transport;
+    let active = t.is_active();
+    let has_item = t.loaded.with(|l| l.is_some());
     vec![
         sub_menu(
             res::str::menu_file(),
             vec![
                 menu_role(MenuRole::NewWindow),
                 menu_separator(),
-                menu_item(res::str::catalog_check()).action(move || app.sync.check(app.catalog)),
+                menu_item(res::str::cmd_add_folder())
+                    .id(day::id!(add_folder))
+                    .enabled(capability(Cap::FolderDialog) != Support::Unsupported)
+                    .action(move || pages::add_folder(app)),
+                menu_item(res::str::cmd_import_files())
+                    .id(day::id!(import_files))
+                    .action(move || pages::import_files(app)),
+                menu_separator(),
+                menu_item(res::str::cmd_new_playlist())
+                    .id(day::id!(new_playlist))
+                    .action(front(move |scene| pages::new_playlist(app, scene))),
+                menu_item(res::str::cmd_add_podcast())
+                    .id(day::id!(add_podcast))
+                    .action(front(move |scene| pages::add_podcast_by_url(app, scene))),
+                menu_item(res::str::cmd_refresh_podcasts())
+                    .id(day::id!(refresh_podcasts))
+                    .action(move || app.podcasts.refresh_all()),
                 menu_separator(),
                 menu_role(MenuRole::CloseWindow),
             ],
@@ -611,28 +392,77 @@ fn menus() -> Vec<MenuEntry> {
                 menu_role(MenuRole::SelectAll),
             ],
         ),
-        // The player is app-wide, so these need no window: whichever window is in front,
-        // there is one stream.
         sub_menu(
-            res::str::menu_playback(),
+            res::str::menu_controls(),
             vec![
-                menu_item(res::str::cmd_play())
-                    .shortcut(Shortcut::primary("p"))
-                    .action(move || player.toggle()),
+                menu_item(if active {
+                    res::str::cmd_pause()
+                } else {
+                    res::str::cmd_play()
+                })
+                .id(day::id!(play_pause))
+                .shortcut(Shortcut::primary("p"))
+                .enabled(has_item)
+                .action(move || t.toggle()),
                 menu_item(res::str::cmd_stop())
+                    .id(day::id!(menu_stop))
                     .shortcut(Shortcut::primary("."))
-                    .action(move || player.stop.notify()),
+                    .enabled(has_item)
+                    .action(move || t.stop()),
                 menu_separator(),
-                menu_item(res::str::playing_previous())
-                    .shortcut(Shortcut::primary("["))
-                    .action(move || player.step(-1)),
-                menu_item(res::str::playing_next())
+                menu_item(res::str::cmd_next())
+                    .id(day::id!(menu_next))
                     .shortcut(Shortcut::primary("]"))
-                    .action(move || player.step(1)),
+                    .enabled(t.has_next())
+                    .action(move || t.next()),
+                menu_item(res::str::cmd_previous())
+                    .id(day::id!(menu_previous))
+                    .shortcut(Shortcut::primary("["))
+                    .enabled(has_item)
+                    .action(move || t.previous()),
                 menu_separator(),
-                menu_item(res::str::cmd_favorite())
-                    .shortcut(Shortcut::primary("d"))
-                    .action(move || player.toggle_favorite()),
+                menu_item(res::str::cmd_shuffle())
+                    .id(day::id!(menu_shuffle))
+                    .checked(t.shuffle.get())
+                    .action(move || t.set_shuffle(!t.shuffle.get_untracked())),
+                menu_item(res::str::cmd_repeat())
+                    .id(day::id!(menu_repeat))
+                    .checked(t.repeat.get() != transport::Repeat::Off)
+                    .action(move || t.cycle_repeat()),
+                menu_separator(),
+                menu_item(res::str::cmd_volume_up())
+                    .shortcut(Shortcut::primary("ArrowUp"))
+                    .action(move || t.volume.update(|v| *v = (*v + 0.1).min(1.0))),
+                menu_item(res::str::cmd_volume_down())
+                    .shortcut(Shortcut::primary("ArrowDown"))
+                    .action(move || t.volume.update(|v| *v = (*v - 0.1).max(0.0))),
+            ],
+        ),
+        sub_menu(
+            res::str::menu_view(),
+            vec![
+                menu_item(res::str::nav_songs())
+                    .shortcut(Shortcut::primary("1"))
+                    .action(front(|s| s.section.set(Section::Songs))),
+                menu_item(res::str::nav_albums())
+                    .shortcut(Shortcut::primary("2"))
+                    .action(front(|s| s.section.set(Section::Albums))),
+                menu_item(res::str::nav_artists())
+                    .shortcut(Shortcut::primary("3"))
+                    .action(front(|s| s.section.set(Section::Artists))),
+                menu_item(res::str::nav_stations())
+                    .shortcut(Shortcut::primary("4"))
+                    .action(front(|s| s.section.set(Section::Stations))),
+                menu_item(res::str::nav_episodes())
+                    .shortcut(Shortcut::primary("5"))
+                    .action(front(|s| s.section.set(Section::Episodes))),
+                menu_item(res::str::nav_queue())
+                    .shortcut(Shortcut::primary("u"))
+                    .action(front(|s| s.section.set(Section::Queue))),
+                menu_separator(),
+                menu_item(res::str::cmd_find())
+                    .shortcut(Shortcut::primary("f"))
+                    .action(day::focus_search),
             ],
         ),
     ]

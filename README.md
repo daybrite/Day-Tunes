@@ -1,8 +1,8 @@
 # Day Tunes
 
-An internet radio player for browsing stations around the world and keeping the ones you like.
-Built with [Day](https://daybrite.dev), a Rust framework that renders native widgets on Mac,
-iPhone, Android, Windows, Linux, and HarmonyOS, and DOM elements on the web.
+A music player for the songs you own, the world's radio, and the podcasts you follow. Built with
+[Day](https://daybrite.dev), a Rust framework that renders native widgets on Mac, iPhone,
+Android, Windows, Linux, and HarmonyOS, and DOM elements on the web.
 
 ## Run it in one command
 
@@ -18,34 +18,30 @@ The launch prints the checkout location so you can open the code and change it.
 
 ## What you get
 
-- Browse the [Tune Out catalog](https://github.com/Tune-Out/stations) by country, genre,
-  language, or top stations. Search names, genres, and countries as you type.
-- Play stations and choose among the available streams; inspect their formats or visit their
-  homepages.
-- Keep favorites, listening history, notes, and tags. Your library stays on the device and
-  survives catalog updates.
-- Browse while listening. Desktop toolbar controls and a separate Now Playing destination
-  provide playback, volume, favorites, and Previous/Next through the station list.
-- Select a station to open its details. Track details appear when the stream and platform
-  provide them.
-- Change the appearance and language, check for catalog updates, or use another catalog URL
-  in Settings.
-
-The catalog downloads on first launch and updates in the background. Once downloaded, it is
-available for offline browsing and search; listening still needs a network connection.
-Navigation adapts to the window size, with tabs, a rail, or a sidebar. Audio is hosted in the
-first window's piece tree; it survives page changes, but is not an application-owned background
-service. Activity recreation can restart the player. Lock-screen controls and guaranteed
-background playback are not implemented.
+- **A library.** Add a folder of music (or import files on a phone) and the app reads each
+  file's tags and cover art: MP3, AAC, FLAC, Ogg Vorbis, Opus, WAV and AIFF. Songs, albums,
+  artists and genres, recently added and recently played, and playlists you make and reorder.
+- **Up Next.** Play an album, a playlist, a search, or a station list, and step through it.
+  Shuffle, repeat, play next, add to the queue, and drag the queue into the order you want.
+- **Internet radio.** Browse the community-run [Radio Browser](https://www.radio-browser.info)
+  index by top stations, trending, country, tag or language, and search it by name. Keep the
+  stations you like; the ones you play are remembered. The stream's own song title shows while
+  it plays. The index is one implementation of a small trait, so another directory can take
+  its place, and Settings lets you name a mirror of your own.
+- **Podcasts.** Discover shows from the Apple Podcasts chart and search, or add any feed by
+  URL. Episodes refresh on their own, resume where you stopped, and download for the road. The
+  directory is one implementation of a trait too; the feed parser is the app's own.
+- **Scrobbling.** Sign in to Last.fm, Libre.fm, ListenBrainz, or any GNU FM server, and every
+  listen goes out, including the songs a radio station names, queued while offline.
+- **The system's controls.** The lock screen, the media keys, headset buttons and MPRIS
+  clients show what is on and drive the transport.
+- **Every platform.** A three-pane window with a player bar on the desktops and the web; tabs,
+  stacks and a mini player on the phones. Appearance and language follow Settings.
 
 Playback uses [day-piece-media](https://github.com/daybrite/day-piece-media) and the platform's
-media engine. Available codecs and plugins determine which streams work. GTK installations
-without a media backend and OpenHarmony emulators without media plugins can browse stations
-but cannot play them.
-
-On the web, browser codec and cross-origin policies can prevent some stations from playing,
-and stream metadata is unavailable. Web and HarmonyOS use bundled radio artwork in place of
-station logos.
+media engine, so codecs and streaming formats are the platform's. The web build browses radio
+and podcasts and plays what the browser's codecs and cross-origin rules allow; it has no local
+library.
 
 ## Build from a clone
 
@@ -58,75 +54,60 @@ day launch -t macos-appkit
 day launch -t ios-uikit          # needs a booted Simulator
 day launch -t android-mdc        # needs a JDK and a running emulator or device
 day launch -t web-dom            # serves the WebAssembly build locally
-cargo test                      # catalog and manifest unit tests
+cargo test                      # the parsers, the store, the queue
 ```
 
-Bare Cargo commands use the default `mock` backend for tests and editor support. To build a
-native desktop backend directly, disable the default and select a feature, for example
-`cargo build --no-default-features --features appkit`.
+Bare Cargo commands use the default `mock` backend for tests and editor support.
 
 To work against sibling checkouts of Day and the media crate, generate local Cargo overrides:
 
 ```sh
-day patch --local ../day --local ../day-piece-media --check
+day patch --local ../day --local ../day-piece-media --local ../day-persistence --check
 ```
 
-The [walkthrough](dayscript/walkthrough.yaml) exercises browsing, search, the library, settings,
-and playback controls, and captures screenshots. Run it with the bundled catalog fixture:
+The [walkthrough](dayscript/walkthrough.yaml) exercises the library, playlists, radio, podcasts,
+the queue and settings, and captures screenshots. Run it on the bundled fixtures:
 
 ```sh
-day launch -t macos-appkit --env TUNES_CATALOG_URL=asset:catalog-fixture \
+day launch -t macos-appkit \
+  --env TUNES_LIBRARY_IMPORT=asset:library-fixture \
+  --env TUNES_RADIO_INDEX=asset:radio-fixture \
+  --env TUNES_PODCAST_DIRECTORY=asset:podcast-fixture \
   --script dayscript/walkthrough.yaml
 ```
 
-The fixture makes catalog tests independent of the download server. Its stream URLs still
-refer to public stations; the walkthrough does not assert successful live playback. Run desktop
-walkthroughs sequentially, or pass a separate `--env DAY_DATA_DIR=/path/to/test-data` to each
-instance so they do not modify the same library.
+The fixtures live under [resource/assets/](resource/assets/) and are made by
+[scripts/build-fixtures.py](scripts/build-fixtures.py): a dozen tagged WAV tones, the index's
+JSON for a handful of stations, and two podcast feeds. The script asserts nothing about live
+playback. Run desktop walkthroughs sequentially, or pass a separate `--env DAY_DATA_DIR=…` to
+each instance so they do not share one library.
 
-`day lint --strict` checks the app's declarations and locale coverage. The browser storage test
-checks that the catalog, a favorite, and a note survive a reload with catalog requests blocked:
-
-```sh
-day build -t web-dom
-node scripts/test-web-storage.mjs
-```
-
-The storage test needs Playwright and Chromium. If Playwright is installed outside the project,
-set `DAY_WEB_DRIVER_PLAYWRIGHT` to the directory containing its `node_modules`.
+`day lint --strict` checks the app's declarations and locale coverage.
 
 ## Inside the code
 
-- [src/lib.rs](src/lib.rs) sets up navigation, menus, overlays, and the media player.
-  `App` holds the shared catalog, sync, and playback state; `Scene` holds each window's
-  navigation and selection. An application-owned audio service keeps playback independent of
-  individual windows.
-- [src/catalog.rs](src/catalog.rs) defines the station queries and listener data. A read-only
-  catalog is attached to the listener's SQLite database, with favorites, notes, and tags linked
-  by station UUID. Search uses SQLite's full-text index.
-- [src/sync.rs](src/sync.rs) checks the publisher's manifest, downloads the catalog, verifies its
-  SHA-256 hash, and replaces the installed revision.
-- [src/pages.rs](src/pages.rs) contains Browse, Search, Library, station details, Now Playing,
-  and Settings.
-- [resource/locales/](resource/locales/) contains the Fluent translations.
-- [resource/assets/catalog-fixture/](resource/assets/catalog-fixture/) holds the test catalog.
-  [scripts/build-fixture.py](scripts/build-fixture.py) rebuilds it from a full `stations.sqlite`.
-- [platform/](platform/) contains the native host projects for mobile targets.
+- [src/lib.rs](src/lib.rs): the app's sections and routes, `App` (the store, the sources, the
+  transport) and `Scene` (what one window shows), startup, the menu bar.
+- [src/library.rs](src/library.rs): the SQLite store (tracks, folders, playlists, stations,
+  podcasts, episodes, history, pending scrobbles), the grouped album, artist and genre views,
+  the folder scanner and the file importer.
+- [src/transport.rs](src/transport.rs): the app-owned audio session, the queue, shuffle and
+  repeat, resume positions, listens, and the system's now-playing display.
+- [src/radio.rs](src/radio.rs): the `RadioIndex` trait, the Radio Browser client, the fixture
+  index, and the per-browse cache.
+- [src/podcasts.rs](src/podcasts.rs): the `PodcastDirectory` trait, the Apple directory, the
+  RSS parser, feed refreshes and episode downloads.
+- [src/scrobble.rs](src/scrobble.rs): the `Scrobbler` trait, the Audioscrobbler 2.0 and
+  ListenBrainz clients, sign-in and the send queue.
+- [src/pages.rs](src/pages.rs): every surface, shared by the desktop and phone shells.
+- [resource/locales/](resource/locales/): the Fluent translations.
 
-The app uses Day's persistence support, `day-part-http` for catalog downloads,
-`day-piece-settings` for preferences, and `day-piece-remote-image` for station artwork.
-`day-piece-media` supplies playback; Serde parses the catalog manifest, and `day-build`
-generates resource bindings. [Cargo.toml](Cargo.toml) lists the dependencies and backend features.
+The app uses Day's persistence extension for its store, `day-part-http` for every source,
+`day-part-fs` for imported media, artwork and downloads, `day-part-keychain` for scrobbler
+sessions, `day-piece-settings` for preferences, and `day-piece-media` for playback and tag
+reading. [Cargo.toml](Cargo.toml) lists the dependencies and backend features.
 
-In the browser, Day's SQLite worker stores both databases in the origin private file system
-(OPFS). Catalog revisions use separate filenames so a replacement can be attached before the
-old file is removed. Hosting requires cross-origin isolation headers, which Day's development
-server supplies; remote catalog servers must also allow CORS.
-
-Day Tunes is open source under the Apache-2.0 license. The
-[Tune Out catalog](https://github.com/Tune-Out/stations) and the bundled catalog fixture are
-public domain (CC0).
-
+Day Tunes is open source under the Apache-2.0 license.
 
 ## Generated native projects
 
