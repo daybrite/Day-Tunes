@@ -20,40 +20,40 @@ flow:
 
   # --- Library ----------------------------------------------------------------------------------
   # The fixture imports at launch; the Songs list fills as the rows land.
-  - navigate: { route: songs, skip_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: song_list, within: 60, skip_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: songs_count, within: 60, skip_on: [uikit, mdc, arkui, dom] }
-  - screenshot: { name: songs, skip_on: [uikit, mdc, arkui, dom] }
+  - navigate: { route: songs, skip_on: [uikit, material, arkui, dom] }
+  - wait_for: { id: song_list, within: 60, skip_on: [uikit, material, arkui, dom] }
+  - wait_for: { id: songs_count, within: 60, skip_on: [uikit, material, arkui, dom] }
+  - screenshot: { name: songs, skip_on: [uikit, material, arkui, dom] }
 
   # On a phone the Library tab is a list of shelves; Songs is one of them.
-  - navigate: { route: library, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: shelf_root, within: 60, only_on: [uikit, mdc, arkui] }
-  - screenshot: { name: library-tab, only_on: [uikit, mdc, arkui] }
-  - select: { id: shelf_root, index: 3, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: song_list, within: 60, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: songs_count, within: 60, only_on: [uikit, mdc, arkui] }
-  - screenshot: { name: songs, only_on: [uikit, mdc, arkui] }
+  - navigate: { route: library, only_on: [uikit, material, arkui] }
+  - wait_for: { id: shelf_root, within: 60, only_on: [uikit, material, arkui] }
+  - screenshot: { name: library-tab, only_on: [uikit, material, arkui] }
+  - select: { id: shelf_root, index: 3, only_on: [uikit, material, arkui] }
+  - wait_for: { id: song_list, within: 60, only_on: [uikit, material, arkui] }
+  - wait_for: { id: songs_count, within: 60, only_on: [uikit, material, arkui] }
+  - screenshot: { name: songs, only_on: [uikit, material, arkui] }
 
   # Activate the first song: it plays, and the player bar (or the mini player) shows it.
   - activate: { id: song_list, index: 0, skip_on: [dom] }
-  - wait_for: { id: bar_title, skip_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: mini_player, only_on: [uikit, mdc, arkui] }
+  - wait_for: { id: bar_title, skip_on: [uikit, material, arkui, dom] }
+  - wait_for: { id: mini_player, only_on: [uikit, material, arkui] }
   - pause: { secs: 1, skip_on: [dom] }
   - screenshot: { name: playing-song, skip_on: [dom] }
 
   # A desktop click opens the song's page beside the list.
-  - select: { id: song_list, index: 1, skip_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: track_title, skip_on: [uikit, mdc, arkui, dom] }
-  - assert_visible: { id: track_play, skip_on: [uikit, mdc, arkui, dom] }
-  - screenshot: { name: song, skip_on: [uikit, mdc, arkui, dom] }
-  - tap: { id: track_play_next, skip_on: [uikit, mdc, arkui, dom] }
+  - select: { id: song_list, index: 1, skip_on: [uikit, material, arkui, dom] }
+  - wait_for: { id: track_title, skip_on: [uikit, material, arkui, dom] }
+  - assert_visible: { id: track_play, skip_on: [uikit, material, arkui, dom] }
+  - screenshot: { name: song, skip_on: [uikit, material, arkui, dom] }
+  - tap: { id: track_play_next, skip_on: [uikit, material, arkui, dom] }
   - wait_idle: { skip_on: [dom] }
 
   # Albums as a wall of covers; one opens onto its tracks.
-  - navigate: { route: albums, skip_on: [uikit, mdc, arkui, dom] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: shelf_root, only_on: [uikit, mdc, arkui] }
-  - select: { id: shelf_root, index: 2, only_on: [uikit, mdc, arkui] }
+  - navigate: { route: albums, skip_on: [uikit, material, arkui, dom] }
+  - nav_back: { only_on: [uikit, material, arkui] }
+  - wait_for: { id: shelf_root, only_on: [uikit, material, arkui] }
+  - select: { id: shelf_root, index: 2, only_on: [uikit, material, arkui] }
   - wait_for: { id: album_grid, skip_on: [dom] }
   # The tile's key is the album's group key, a hash of its artist and title; the fixture's
   # "Morning Light" by Aurora Fields (src/library.rs `fixture_ids_match_the_walkthrough`).
@@ -65,92 +65,92 @@ flow:
   - screenshot: { name: album, skip_on: [dom] }
   - tap: { id: group_play, skip_on: [dom] }
   - wait_idle: { skip_on: [dom] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
 
   # Artists.
-  - navigate: { route: artists, skip_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: shelf_root, only_on: [uikit, mdc, arkui] }
-  - select: { id: shelf_root, index: 1, only_on: [uikit, mdc, arkui] }
+  - navigate: { route: artists, skip_on: [uikit, material, arkui, dom] }
+  - wait_for: { id: shelf_root, only_on: [uikit, material, arkui] }
+  - select: { id: shelf_root, index: 1, only_on: [uikit, material, arkui] }
   - wait_for: { id: artist_list, skip_on: [dom] }
   - select: { id: artist_list, index: 0, skip_on: [dom] }
   - wait_for: { id: artist_page, skip_on: [dom] }
   - screenshot: { name: artist, skip_on: [dom] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
 
   # A playlist, made from the menu bar on a desktop and from the Playlists shelf on a phone.
-  - menu: { id: new_playlist, skip_on: [uikit, mdc, arkui, dom] }
-  - wait_for: { id: shelf_root, only_on: [uikit, mdc, arkui] }
-  - select: { id: shelf_root, index: 0, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: playlists_list, only_on: [uikit, mdc, arkui] }
-  - toolbar: { item: tb_new_playlist, only_on: [uikit, mdc, arkui] }
+  - menu: { id: new_playlist, skip_on: [uikit, material, arkui, dom] }
+  - wait_for: { id: shelf_root, only_on: [uikit, material, arkui] }
+  - select: { id: shelf_root, index: 0, only_on: [uikit, material, arkui] }
+  - wait_for: { id: playlists_list, only_on: [uikit, material, arkui] }
+  - toolbar: { item: tb_new_playlist, only_on: [uikit, material, arkui] }
   - assert_presented: { skip_on: [dom] }
   - respond: { text: "Morning", skip_on: [dom] }
   - wait_for: { id: playlist_list, skip_on: [dom] }
   - screenshot: { name: playlist, skip_on: [dom] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
 
   # --- Up Next --------------------------------------------------------------------------------------
-  - navigate: { route: queue, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: queue_list, skip_on: [uikit, mdc, arkui] }
-  - screenshot: { name: queue, skip_on: [uikit, mdc, arkui] }
-  - navigate: { route: playing, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: playing_title, only_on: [uikit, mdc, arkui] }
-  - screenshot: { name: now-playing, only_on: [uikit, mdc, arkui] }
-  - tap: { id: playing_toggle, only_on: [uikit, mdc, arkui] }
+  - navigate: { route: queue, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: queue_list, skip_on: [uikit, material, arkui] }
+  - screenshot: { name: queue, skip_on: [uikit, material, arkui] }
+  - navigate: { route: playing, only_on: [uikit, material, arkui] }
+  - wait_for: { id: playing_title, only_on: [uikit, material, arkui] }
+  - screenshot: { name: now-playing, only_on: [uikit, material, arkui] }
+  - tap: { id: playing_toggle, only_on: [uikit, material, arkui] }
   - wait_idle: {}
 
   # --- Radio ------------------------------------------------------------------------------------------
   # Browse the index: the top stations, a country, a tag; keep one.
-  - navigate: { route: browse, skip_on: [uikit, mdc, arkui] }
-  - navigate: { route: radio, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: radio_cuts, only_on: [uikit, mdc, arkui] }
-  - screenshot: { name: radio-tab, only_on: [uikit, mdc, arkui] }
-  - select: { id: radio_cuts, index: 0, only_on: [uikit, mdc, arkui] }
+  - navigate: { route: browse, skip_on: [uikit, material, arkui] }
+  - navigate: { route: radio, only_on: [uikit, material, arkui] }
+  - wait_for: { id: radio_cuts, only_on: [uikit, material, arkui] }
+  - screenshot: { name: radio-tab, only_on: [uikit, material, arkui] }
+  - select: { id: radio_cuts, index: 0, only_on: [uikit, material, arkui] }
   - wait_for: { id: browse_list, within: 30 }
   # Radio Paradise, the fixture's most voted station (uuid f2).
   - wait_for: { id: "station_row:619401112520371537", within: 30 }
   - screenshot: radio-top
-  - select: { id: browse_list, index: 0, skip_on: [uikit, mdc, arkui] }
-  - activate: { id: browse_list, index: 0, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: station_name, skip_on: [uikit, mdc, arkui] }
-  - assert_visible: { id: station_play, skip_on: [uikit, mdc, arkui] }
-  - tap: { id: station_favorite, skip_on: [uikit, mdc, arkui] }
-  - tap: { id: station_play, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: station_state, skip_on: [uikit, mdc, arkui] }
+  - select: { id: browse_list, index: 0, skip_on: [uikit, material, arkui] }
+  - activate: { id: browse_list, index: 0, only_on: [uikit, material, arkui] }
+  - wait_for: { id: station_name, skip_on: [uikit, material, arkui] }
+  - assert_visible: { id: station_play, skip_on: [uikit, material, arkui] }
+  - tap: { id: station_favorite, skip_on: [uikit, material, arkui] }
+  - tap: { id: station_play, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: station_state, skip_on: [uikit, material, arkui] }
   - pause: { secs: 2 }
   - screenshot: station
-  - tap: { id: "station_heart:619401112520371537", only_on: [uikit, mdc, arkui] }
+  - tap: { id: "station_heart:619401112520371537", only_on: [uikit, material, arkui] }
   - wait_idle: {}
-  - toolbar: { item: tb_radio_cut, index: 1, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: country_list, within: 30, skip_on: [uikit, mdc, arkui] }
-  - screenshot: { name: countries, skip_on: [uikit, mdc, arkui] }
-  - select: { id: country_list, index: 0, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: browse_list, within: 30, skip_on: [uikit, mdc, arkui] }
-  - nav_back: { skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: country_list, skip_on: [uikit, mdc, arkui] }
-  - toolbar: { item: tb_radio_cut, index: 2, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: tag_list, within: 30, skip_on: [uikit, mdc, arkui] }
-  - select: { id: tag_list, index: 0, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: browse_list, within: 30, skip_on: [uikit, mdc, arkui] }
-  - nav_back: { skip_on: [uikit, mdc, arkui] }
-  - toolbar: { item: tb_radio_cut, index: 0, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: browse_list, skip_on: [uikit, mdc, arkui] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - toolbar: { item: tb_radio_cut, index: 1, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: country_list, within: 30, skip_on: [uikit, material, arkui] }
+  - screenshot: { name: countries, skip_on: [uikit, material, arkui] }
+  - select: { id: country_list, index: 0, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: browse_list, within: 30, skip_on: [uikit, material, arkui] }
+  - nav_back: { skip_on: [uikit, material, arkui] }
+  - wait_for: { id: country_list, skip_on: [uikit, material, arkui] }
+  - toolbar: { item: tb_radio_cut, index: 2, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: tag_list, within: 30, skip_on: [uikit, material, arkui] }
+  - select: { id: tag_list, index: 0, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: browse_list, within: 30, skip_on: [uikit, material, arkui] }
+  - nav_back: { skip_on: [uikit, material, arkui] }
+  - toolbar: { item: tb_radio_cut, index: 0, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: browse_list, skip_on: [uikit, material, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
 
   # The kept station shows under Stations.
-  - navigate: { route: stations, skip_on: [uikit, mdc, arkui] }
+  - navigate: { route: stations, skip_on: [uikit, material, arkui] }
   - wait_for: { id: favorite_stations }
   - screenshot: stations
 
   # --- Podcasts -------------------------------------------------------------------------------------
   # Discover lists the chart; a show previews, then subscribes; its episodes arrive.
-  - navigate: { route: discover, skip_on: [uikit, mdc, arkui] }
-  - navigate: { route: podcasts, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: pod_root, only_on: [uikit, mdc, arkui] }
-  - select: { id: pod_root, index: 0, only_on: [uikit, mdc, arkui] }
+  - navigate: { route: discover, skip_on: [uikit, material, arkui] }
+  - navigate: { route: podcasts, only_on: [uikit, material, arkui] }
+  - wait_for: { id: pod_root, only_on: [uikit, material, arkui] }
+  - select: { id: pod_root, index: 0, only_on: [uikit, material, arkui] }
   - wait_for: { id: top_shows, within: 30 }
   - wait_for: { id: "directory_row:1001", within: 30 }
   - screenshot: discover
@@ -164,36 +164,36 @@ flow:
   - screenshot: show
   - activate: { id: show_episodes, index: 0 }
   - wait_idle: {}
-  - nav_back: { only_on: [uikit, mdc, arkui] }
-  - nav_back: { only_on: [uikit, mdc, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
+  - nav_back: { only_on: [uikit, material, arkui] }
 
   # Every subscription's episodes, newest first.
-  - navigate: { route: episodes, skip_on: [uikit, mdc, arkui] }
+  - navigate: { route: episodes, skip_on: [uikit, material, arkui] }
   - wait_for: { id: episode_list }
   - wait_for: { id: "episode_row:8982385423799103407" }
-  - select: { id: episode_list, index: 0, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: episode_title, skip_on: [uikit, mdc, arkui] }
+  - select: { id: episode_list, index: 0, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: episode_title, skip_on: [uikit, material, arkui] }
   - screenshot: episode
-  - tap: { id: episode_mark, skip_on: [uikit, mdc, arkui] }
+  - tap: { id: episode_mark, skip_on: [uikit, material, arkui] }
   - wait_idle: {}
 
   # --- History and Settings -----------------------------------------------------------------------
-  - navigate: { route: history, skip_on: [uikit, mdc, arkui] }
-  - wait_for: { id: history_list, skip_on: [uikit, mdc, arkui] }
-  - screenshot: { name: history, skip_on: [uikit, mdc, arkui] }
+  - navigate: { route: history, skip_on: [uikit, material, arkui] }
+  - wait_for: { id: history_list, skip_on: [uikit, material, arkui] }
+  - screenshot: { name: history, skip_on: [uikit, material, arkui] }
 
   # Settings: the library group on a phone, the window on a desktop.
   - navigate: { route: settings/library }
   - wait_for: { id: pref_tracks }
-  - screenshot: { name: settings, window: day.preferences, skip_on: [uikit, mdc, arkui, dom] }
-  - screenshot: { name: settings, only_on: [uikit, mdc, arkui, dom] }
-  - close_window: { window: day.preferences, skip_on: [uikit, mdc, arkui] }
-  - navigate: { route: settings/scrobbling, only_on: [uikit, mdc, arkui] }
-  - wait_for: { id: pref_service, only_on: [uikit, mdc, arkui] }
-  - screenshot: { name: settings-scrobbling, only_on: [uikit, mdc, arkui] }
+  - screenshot: { name: settings, window: day.preferences, skip_on: [uikit, material, arkui, dom] }
+  - screenshot: { name: settings, only_on: [uikit, material, arkui, dom] }
+  - close_window: { window: day.preferences, skip_on: [uikit, material, arkui] }
+  - navigate: { route: settings/scrobbling, only_on: [uikit, material, arkui] }
+  - wait_for: { id: pref_service, only_on: [uikit, material, arkui] }
+  - screenshot: { name: settings-scrobbling, only_on: [uikit, material, arkui] }
 
   # Back where the script started, so a second script in the same launch finds its page.
-  - navigate: { route: songs, skip_on: [uikit, mdc, arkui, dom] }
+  - navigate: { route: songs, skip_on: [uikit, material, arkui, dom] }
   - navigate: { route: stations, only_on: [dom] }
-  - navigate: { route: library, only_on: [uikit, mdc, arkui] }
+  - navigate: { route: library, only_on: [uikit, material, arkui] }
   - wait_idle: {}

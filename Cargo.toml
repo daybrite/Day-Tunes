@@ -15,7 +15,7 @@ appkit = ["day/appkit"]
 gtk = ["day/gtk"]
 qt = ["day/qt"]
 uikit = ["day/uikit"]
-mdc = ["day/mdc"]
+material = ["day/material"]
 xaml = ["day/xaml"]
 winui = ["day/winui"]
 arkui = ["day/arkui"]
@@ -39,7 +39,7 @@ day-piece-settings = { git = "https://github.com/daybrite/day.git" }
 # The radio index, the podcast directory, feeds, episode downloads and scrobbles all go over HTTP.
 day-part-http = { git = "https://github.com/daybrite/day.git" }
 # Imported media, artwork and downloaded episodes live under the app's data directory.
-day-part-fs = { git = "https://github.com/daybrite/day.git" }
+day-part-filesystem = { git = "https://github.com/daybrite/day.git" }
 # Scrobbler session keys.
 day-part-keychain = { git = "https://github.com/daybrite/day.git" }
 # Index and directory responses are JSON; the podcast feed parser is the app's own (src/podcasts.rs).

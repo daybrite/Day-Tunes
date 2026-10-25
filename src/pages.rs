@@ -632,7 +632,7 @@ pub fn art_piece(art: Art, size: f64, radius: f64, glyph: day::VectorName) -> im
         Art::File(key) => {
             let path = format!("tunes/{key}");
             let task = day::task(async move {
-                if let Ok(data) = day_part_fs::read_future(&path).await {
+                if let Ok(data) = day_part_filesystem::read_future(&path).await {
                     bytes.set(Some(Arc::new(data)));
                 }
             });

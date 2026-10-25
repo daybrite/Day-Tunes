@@ -52,7 +52,7 @@ you build or launch:
 day doctor
 day launch -t macos-appkit
 day launch -t ios-uikit          # needs a booted Simulator
-day launch -t android-mdc        # needs a JDK and a running emulator or device
+day launch -t android-material        # needs a JDK and a running emulator or device
 day launch -t web-dom            # serves the WebAssembly build locally
 cargo test                      # the parsers, the store, the queue
 ```
@@ -103,7 +103,7 @@ each instance so they do not share one library.
 - [resource/locales/](resource/locales/): the Fluent translations.
 
 The app uses Day's persistence extension for its store, `day-part-http` for every source,
-`day-part-fs` for imported media, artwork and downloads, `day-part-keychain` for scrobbler
+`day-part-filesystem` for imported media, artwork and downloads, `day-part-keychain` for scrobbler
 sessions, `day-piece-settings` for preferences, and `day-piece-media` for playback and tag
 reading. [Cargo.toml](Cargo.toml) lists the dependencies and backend features.
 
