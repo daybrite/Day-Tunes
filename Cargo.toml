@@ -30,7 +30,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 # The listener's store: tracks, playlists, stations, podcasts, history (src/library.rs).
-day = { git = "https://github.com/daybrite/day.git", features = ["http-image", "model"] }
+day = { package = "day-app", git = "https://github.com/daybrite/day.git", features = ["http-image", "model"] }
 day-pieces = { git = "https://github.com/daybrite/day.git" }
 day-persistence = { git = "https://github.com/daybrite/day-persistence.git", version = "0.1" }
 # The player (an app-owned `AudioSession`) and the tag reader the library scanner uses.

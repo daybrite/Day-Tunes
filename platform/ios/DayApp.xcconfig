@@ -38,7 +38,7 @@ CURRENT_PROJECT_VERSION = 1
 // Platform
 // ===========================================================================
 // The native pieces require iOS 16. Keep Xcode builds aligned with `day build`.
-IPHONEOS_DEPLOYMENT_TARGET = 16.0
+IPHONEOS_DEPLOYMENT_TARGET = 15.0
 // 1 = iPhone, 2 = iPad. Drop the 2 for an iPhone-only app.
 TARGETED_DEVICE_FAMILY = 1,2
 
