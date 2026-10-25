@@ -1338,7 +1338,10 @@ impl Library {
 fn files_root() -> Option<PathBuf> {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let root = day_part_filesystem::data_dir().ok()?.join("day-fs").join("tunes");
+        let root = day_part_filesystem::data_dir()
+            .ok()?
+            .join("day-fs")
+            .join("tunes");
         for sub in ["art", "media", "podcasts"] {
             let _ = std::fs::create_dir_all(root.join(sub));
         }
