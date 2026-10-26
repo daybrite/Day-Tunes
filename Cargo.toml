@@ -30,24 +30,24 @@ crate-type = ["rlib"]
 
 [dependencies]
 # The listener's store: tracks, playlists, stations, podcasts, history (src/library.rs).
-day = { package = "day-app", git = "https://github.com/daybrite/day.git", features = ["http-image", "model"] }
-day-pieces = { git = "https://github.com/daybrite/day.git" }
-day-persistence = { git = "https://github.com/daybrite/day-persistence.git", version = "0.1" }
+day = { package = "day-app", version = "0.6", features = ["http-image", "model"] }
+day-pieces = "0.6"
+day-persistence = "0.1"
 # The player (an app-owned `AudioSession`) and the tag reader the library scanner uses.
-day-piece-media = { git = "https://github.com/daybrite/day-piece-media.git" }
-day-piece-settings = { git = "https://github.com/daybrite/day.git" }
+day-piece-media = "0.4"
+day-piece-settings = "0.6"
 # The radio index, the podcast directory, feeds, episode downloads and scrobbles all go over HTTP.
-day-part-http = { git = "https://github.com/daybrite/day.git" }
+day-part-http = "0.6"
 # Imported media, artwork and downloaded episodes live under the app's data directory.
-day-part-filesystem = { git = "https://github.com/daybrite/day.git" }
+day-part-filesystem = "0.6"
 # Scrobbler session keys.
-day-part-keychain = { git = "https://github.com/daybrite/day.git" }
+day-part-keychain = "0.6"
 # Index and directory responses are JSON; the podcast feed parser is the app's own (src/podcasts.rs).
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [build-dependencies]
-day-build = { git = "https://github.com/daybrite/day.git" }
+day-build = "0.6"
 
 
 [workspace]

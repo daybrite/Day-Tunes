@@ -50,9 +50,19 @@ pub(crate) fn has_menu_bar() -> bool {
     capability(Cap::AppMenu) != Support::Unsupported
 }
 
-/// Whether this is a phone-shaped platform: tabs, stacks, a mini player.
+/// Whether the window lays out as a phone: tabs, stacks, a mini player. That is a touch
+/// platform's window that is narrow (a phone, an iPad in Slide Over) or short (a phone on its
+/// side); a tablet's window gets the desktop's panes. Read untracked: a page that sizes itself
+/// from this need not rebuild on a rotation, because the shell rebuilds when the answer changes.
 pub(crate) fn is_phone() -> bool {
-    capability(Cap::AppMenu) == Support::Unsupported
+    untrack(phone_layout)
+}
+
+/// [`is_phone`], tracked: what the window shell switches on.
+fn phone_layout() -> bool {
+    !has_menu_bar()
+        && day::size_class()
+            .is_none_or(|c| c.width == WidthClass::Compact || c.height == HeightClass::Compact)
 }
 
 /// The app's sections. A desktop sidebar lists the first group; a phone's tabs the second.
@@ -77,6 +87,33 @@ pub enum Section {
     Podcasts,
     Playing,
     Settings,
+}
+
+impl Section {
+    /// The section that shows the same thing in the other shell, for a window that crosses
+    /// between the phone's tabs and the desktop's panes (an iPad entering Slide Over).
+    fn for_shell(&self, phone: bool) -> Section {
+        match (phone, self) {
+            (
+                true,
+                Self::Songs
+                | Self::Albums
+                | Self::Artists
+                | Self::Genres
+                | Self::RecentlyAdded
+                | Self::History
+                | Self::Playlist(_),
+            ) => Self::Shelf,
+            (true, Self::Stations | Self::RadioBrowse) => Self::Radio,
+            (true, Self::Episodes | Self::Shows | Self::Discover) => Self::Podcasts,
+            (true, Self::Queue) => Self::Playing,
+            (false, Self::Shelf) if pages::has_local_library() => Self::Songs,
+            (false, Self::Shelf | Self::Radio) => Self::Stations,
+            (false, Self::Podcasts) => Self::Episodes,
+            (false, Self::Playing) => Self::Queue,
+            (_, s) => s.clone(),
+        }
+    }
 }
 
 impl Route for Section {
@@ -333,11 +370,18 @@ fn window_shell(primary: bool, prefs: Prefs) -> impl Piece {
             }
             _ => res::str::app_title().format(),
         });
-        if is_phone() {
-            pages::phone_shell(scene, prefs, primary).any()
-        } else {
-            pages::desktop_shell(scene, prefs, primary).any()
-        }
+        switch(phone_layout, move |&phone| {
+            let section = scene.section.get_untracked();
+            let moved = section.for_shell(phone);
+            if moved != section {
+                scene.section.set(moved);
+            }
+            if phone {
+                pages::phone_shell(scene, prefs.clone(), primary).any()
+            } else {
+                pages::desktop_shell(scene, prefs.clone(), primary).any()
+            }
+        })
     })
 }
 

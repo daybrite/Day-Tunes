@@ -16,7 +16,7 @@ use crate::library::{
 use crate::podcasts::DirectoryShow;
 use crate::radio::{Browse, FacetKind, Fetched, flag, stream_url, tag_list};
 use crate::transport::{Art, Item, Repeat, Transport, clock, describe};
-use crate::{App, Detail, Scene, Section, is_phone, res};
+use crate::{App, Detail, Scene, Section, has_menu_bar, is_phone, res};
 use day::prelude::*;
 use day_persistence::Query;
 use day_piece_media::PlaybackState;
@@ -285,7 +285,10 @@ pub fn desktop_shell(scene: Scene, prefs: Prefs, primary: bool) -> impl Piece {
     let app = App::app();
     let lib = app.library;
     let playlists = lib.playlists.clone();
+    // Pinned, so a tablet gets the sectioned sidebar on every OS version rather than iOS 17's
+    // tab bar, which has no sidebar mode to grow into.
     let nav = nav(scene.section)
+        .style(NavStyle::Sidebar)
         .title(res::str::app_title())
         .content_list(
             ContentList::new(content_pane)
@@ -4027,7 +4030,8 @@ fn player_bar(scene: Scene) -> impl Piece {
     .spacing(Space::M)
     .align(VAlign::Center)
     .padding(Insets::symmetric(16.0, 10.0))
-    .height(84.0)
+    // Taller on a tablet, where the seek slider under the play button is a 44 pt touch target.
+    .height(if has_menu_bar() { 84.0 } else { 110.0 })
     .id(day::id!(player_bar))
 }
 
@@ -4188,10 +4192,10 @@ fn repeat_glyph(t: Transport, id: day::ElementId) -> impl Piece {
 }
 
 /// Elapsed, the slider, remaining. A live stream shows its state instead.
-/// A slider's height: the desktop's thin control, or a phone's touch target, which Material
-/// draws below a shorter frame and so out of line with the labels beside it.
+/// A slider's height: the desktop's thin control, or a touch target (a tablet's too), which
+/// Material draws below a shorter frame and so out of line with the labels beside it.
 fn slider_height() -> f64 {
-    if is_phone() { 44.0 } else { 24.0 }
+    if has_menu_bar() { 24.0 } else { 44.0 }
 }
 
 fn seek_row(t: Transport, width: f64) -> impl Piece {

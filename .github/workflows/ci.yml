@@ -11,6 +11,11 @@ on:
   release:
     types: [released]
   workflow_dispatch:
+    inputs:
+      day-main:
+        description: Build against day's main branch instead of the newest release
+        type: boolean
+        default: false
   schedule:
     - cron: "30 18 * * *" # daily (UTC)
 
@@ -35,7 +40,7 @@ jobs:
       # lock left at an older revision would silently stop testing day at all. The revision is
       # resolved once per run, so every leg compiles the same one. Refresh the lock locally
       # (`cargo update -p day`) when a new framework API lands, so a local build matches.
-      update-day-deps: true
+      day-deps: ${{ inputs.day-main && 'main' || 'auto' }}
       scripts: dayscript/walkthrough.yaml
       # The walkthrough reads the fixtures bundled under resource/assets/ instead of the
       # network: the same code paths, deterministic answers.
