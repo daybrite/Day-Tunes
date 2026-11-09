@@ -420,7 +420,7 @@ pub fn desktop_shell(scene: Scene, prefs: Prefs, primary: bool) -> impl Piece {
     } else {
         nav.local()
     };
-    column((nav.grow(), player_bar(scene))).grow()
+    column((nav.grow(Dimension::Both), player_bar(scene))).grow(Dimension::Both)
 }
 
 /// The pushed detail's navigation-bar title, where the toolkit titles one.
@@ -515,7 +515,7 @@ fn detail_pane() -> impl Piece {
             move |d| detail_page(app, scene, d.clone(), Place::Desktop),
         ),
     ))
-    .grow()
+    .grow(Dimension::Both)
 }
 
 fn empty_detail(app: App, section: Section, no_tracks: bool) -> impl Piece {
@@ -599,7 +599,7 @@ fn empty_detail(app: App, section: Section, no_tracks: bool) -> impl Piece {
     ))
     .spacing(Space::M)
     .align(HAlign::Center)
-    .grow()
+    .grow(Dimension::Both)
     .padding(Space::XL)
 }
 
@@ -714,7 +714,7 @@ fn songs_pane(scene: Scene, app: App, place: Place) -> impl Piece {
             day::id!(song_list),
             TrackRow::Full,
         )
-        .grow(),
+        .grow(Dimension::Both),
         // The footer every music app has: how much is here.
         when(
             {
@@ -730,13 +730,13 @@ fn songs_pane(scene: Scene, app: App, place: Place) -> impl Piece {
                         .secondary()
                         .align(TextAlign::Center)
                         .padding(Insets::symmetric(16.0, 8.0))
-                        .grow_w()
+                        .grow(Dimension::Width)
                         .id(day::id!(songs_count))
                 }
             },
         ),
     ))
-    .grow();
+    .grow(Dimension::Both);
     let pane = pane.searchable(Search::new(scene.song_query).prompt(res::str::search_songs()));
     if place == Place::Desktop {
         let shuffle_query = query.clone();
@@ -906,7 +906,7 @@ fn track_row(app: App, slot: ModelSlot<Track>, style: TrackRow) -> impl Piece {
             ))
             .spacing(2.0)
             .align(HAlign::Leading)
-            .grow(),
+            .grow(Dimension::Both),
             playing_mark(is_on),
             duration,
         ))
@@ -941,7 +941,7 @@ fn track_row(app: App, slot: ModelSlot<Track>, style: TrackRow) -> impl Piece {
             ))
             .spacing(1.0)
             .align(HAlign::Leading)
-            .grow(),
+            .grow(Dimension::Both),
             playing_mark(is_on),
             duration,
         ))
@@ -1190,7 +1190,7 @@ fn track_page(app: App, scene: Scene, id: u64) -> impl Piece {
             ))
             .spacing(Space::S)
             .align(HAlign::Center)
-            .grow_w(),
+            .grow(Dimension::Width),
             form((section(rows).title(res::str::section_details()),)),
             labeled(
                 res::str::fact_file(),
@@ -1201,7 +1201,7 @@ fn track_page(app: App, scene: Scene, id: u64) -> impl Piece {
         .align(HAlign::Leading)
         .padding(Space::L),
     )
-    .grow()
+    .grow(Dimension::Both)
     .any()
 }
 
@@ -1278,9 +1278,9 @@ fn album_grid(
             .padding(Space::L)
             .id(id),
         )
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
 }
 
 fn album_menu(app: App, key: u64) -> Vec<MenuEntry> {
@@ -1361,9 +1361,9 @@ fn album_page(app: App, scene: Scene, place: Place, key: u64) -> impl Piece {
             day::id!(album_tracks),
             TrackRow::Album,
         )
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
     .any()
 }
 
@@ -1422,7 +1422,7 @@ fn group_header(
         ))
         .spacing(6.0)
         .align(HAlign::Leading)
-        .grow(),
+        .grow(Dimension::Both),
     ))
     .spacing(Space::L)
     .align(VAlign::Bottom)
@@ -1470,9 +1470,9 @@ fn artist_list(scene: Scene, app: App, place: Place) -> impl Piece {
             _ => Vec::new(),
         })
         .id(day::id!(artist_list))
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
 }
 
 /// An artist's page: the albums as a shelf, then every track.
@@ -1585,10 +1585,10 @@ fn artist_page(app: App, scene: Scene, place: Place, key: u64) -> impl Piece {
             day::id!(artist_tracks),
             TrackRow::Full,
         )
-        .grow(),
+        .grow(Dimension::Both),
     ))
     .spacing(Space::S)
-    .grow()
+    .grow(Dimension::Both)
     .any()
 }
 
@@ -1624,9 +1624,9 @@ fn genre_list(scene: Scene, app: App, place: Place) -> impl Piece {
             _ => Vec::new(),
         })
         .id(day::id!(genre_list))
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
 }
 
 fn genre_page(app: App, scene: Scene, _place: Place, key: u64) -> impl Piece {
@@ -1683,9 +1683,9 @@ fn genre_page(app: App, scene: Scene, _place: Place, key: u64) -> impl Piece {
             day::id!(genre_tracks),
             TrackRow::Full,
         )
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
     .any()
 }
 
@@ -1806,7 +1806,7 @@ fn playlist_pane(scene: Scene, app: App, place: Place, id: u64) -> impl Piece {
                 ))
                 .spacing(2.0)
                 .align(HAlign::Leading)
-                .grow(),
+                .grow(Dimension::Both),
                 playing_mark(move || t.is_current(Item::Track(slot.track().read()))),
                 label(move || {
                     track()
@@ -1865,9 +1865,9 @@ fn playlist_pane(scene: Scene, app: App, place: Place, id: u64) -> impl Piece {
                     .id(day::id!(playlist_empty))
             },
         ),
-        rows.id(day::id!(playlist_list)).grow(),
+        rows.id(day::id!(playlist_list)).grow(Dimension::Both),
     ))
-    .grow();
+    .grow(Dimension::Both);
     if place == Place::Desktop {
         let header_tracks = tracks_of.clone();
         pane.toolbar(move || {
@@ -2006,9 +2006,9 @@ fn history_list(scene: Scene, app: App, place: Place) -> impl Piece {
             }
         })
         .id(day::id!(history_list))
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
     .toolbar(move || {
         vec![
             toolbar_button(day::id!(tb_clear_history), res::str::cmd_clear_history())
@@ -2069,7 +2069,7 @@ fn queue_list(app: App) -> impl Piece {
                     ))
                     .spacing(2.0)
                     .align(HAlign::Leading)
-                    .grow(),
+                    .grow(Dimension::Both),
                     playing_mark(move || t.pos.get() == Some(at())),
                     label(move || {
                         described()
@@ -2107,9 +2107,9 @@ fn queue_list(app: App) -> impl Piece {
         .reorderable(Reorder::new(move |from, to| t.move_entry(from, to)))
         .deletable(Delete::new(move |index| t.remove_at(index)))
         .id(day::id!(queue_list))
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
 }
 
 /// The desktop Queue section: Now Playing large, the queue beside it.
@@ -2120,7 +2120,9 @@ fn queue_page() -> impl Piece {
         scroll(now_playing_panel(app, false)).width(380.0),
         column((
             row((
-                label(res::str::queue_up_next()).font(Font::Headline).grow(),
+                label(res::str::queue_up_next())
+                    .font(Font::Headline)
+                    .grow(Dimension::Both),
                 label(move || res::str::queue_count(t.order.with(|o| o.len()) as f64).format())
                     .font(Font::Caption)
                     .secondary(),
@@ -2134,11 +2136,11 @@ fn queue_page() -> impl Piece {
             .spacing(Space::S)
             .align(VAlign::Center)
             .padding(Insets::symmetric(20.0, 12.0)),
-            queue_list(app).grow(),
+            queue_list(app).grow(Dimension::Both),
         ))
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow();
+    .grow(Dimension::Both);
     page.toolbar(move || {
         vec![
             toolbar_toggle(
@@ -2249,7 +2251,7 @@ fn stations_pane(scene: Scene, app: App, place: Place) -> impl Piece {
             },
         ),
     ))
-    .grow()
+    .grow(Dimension::Both)
 }
 
 /// Stations from the store (favorites, recents), as a sized list inside the pane's column.
@@ -2341,12 +2343,12 @@ fn phone_stations(scene: Scene, app: App) -> impl Piece {
                                     id.clone(),
                                     0,
                                 )
-                                .grow(),
+                                .grow(Dimension::Both),
                             ))
-                            .grow()
+                            .grow(Dimension::Both)
                         },
                     )
-                    .grow()
+                    .grow(Dimension::Both)
                 };
                 column((
                     section(
@@ -2362,7 +2364,7 @@ fn phone_stations(scene: Scene, app: App) -> impl Piece {
                         day::id!(recent_stations),
                     ),
                 ))
-                .grow()
+                .grow(Dimension::Both)
                 .any()
             }
         },
@@ -2371,8 +2373,10 @@ fn phone_stations(scene: Scene, app: App) -> impl Piece {
 
 /// A section heading over a list, set to the leading edge like the rows under it.
 fn heading(text: LocalizedText) -> impl Piece {
-    row((label(text).font(Font::Headline), spacer()))
-        .align(VAlign::Center)
+    label(text)
+        .font(Font::Headline)
+        .aligned(Alignment::Leading)
+        .grow(Dimension::Width)
         .padding(Insets::symmetric(16.0, 8.0))
 }
 
@@ -2397,7 +2401,7 @@ fn station_row_body(app: App, station: impl Fn() -> Station + Copy + 'static) ->
         ))
         .spacing(2.0)
         .align(HAlign::Leading)
-        .grow(),
+        .grow(Dimension::Both),
         playing_mark(move || t.is_current(Item::Station(station().id))),
         heart(app, move || station().id, station),
     ))
@@ -2524,9 +2528,9 @@ fn radio_browse_root(scene: Scene, app: App, place: Place) -> impl Piece {
                 .padding(Insets::symmetric(12.0, 8.0))
             },
         ),
-        body.grow(),
+        body.grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
     .searchable(
         Search::new(scene.radio_query)
             .prompt(res::str::search_stations())
@@ -2574,7 +2578,7 @@ fn fetched<T: Clone + PartialEq + 'static>(
             .spacing(Space::S)
             .align(HAlign::Center)
             .padding(Space::XL)
-            .grow_w()
+            .grow(Dimension::Width)
             .id(day::id!(loading))
             .any(),
             Fetched::Failed(e) => {
@@ -2593,14 +2597,14 @@ fn fetched<T: Clone + PartialEq + 'static>(
                 .spacing(Space::S)
                 .align(HAlign::Center)
                 .padding(Space::XL)
-                .grow_w()
+                .grow(Dimension::Width)
                 .id(day::id!(fetch_failed))
                 .any()
             }
             Fetched::Ready(v) => ready(v.clone()),
         },
     )
-    .grow()
+    .grow(Dimension::Both)
     .id(id)
 }
 
@@ -2656,7 +2660,7 @@ fn facet_list(
                 }
             })
             .id(id.clone())
-            .grow()
+            .grow(Dimension::Both)
             .any()
         },
         day::id!(
@@ -2727,7 +2731,7 @@ fn browse_stations(scene: Scene, app: App, place: Place, browse: Browse) -> impl
                 }
             })
             .id(day::id!(browse_list))
-            .grow()
+            .grow(Dimension::Both)
             .any()
         },
         day::id!(browse, browse.key()),
@@ -2879,7 +2883,7 @@ fn station_page(app: App, scene: Scene, s: Station) -> impl Piece {
             ))
             .spacing(Space::S)
             .align(HAlign::Center)
-            .grow_w(),
+            .grow(Dimension::Width),
             form((section((
                 labeled(
                     res::str::fact_stream(),
@@ -2921,7 +2925,7 @@ fn station_page(app: App, scene: Scene, s: Station) -> impl Piece {
         .align(HAlign::Leading)
         .padding(Space::L),
     )
-    .grow()
+    .grow(Dimension::Both)
 }
 
 /// What the player says, as a line.
@@ -3019,7 +3023,7 @@ fn episode_list(
                 ))
                 .spacing(3.0)
                 .align(HAlign::Leading)
-                .grow(),
+                .grow(Dimension::Both),
                 playing_mark(is_on),
                 when(
                     move || !slot.played().read(),
@@ -3071,9 +3075,9 @@ fn episode_list(
             }
         })
         .id(id)
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
 }
 
 /// The thin bar under an episode that was started.
@@ -3312,7 +3316,7 @@ fn episode_page(app: App, scene: Scene, id: u64) -> impl Piece {
             ))
             .spacing(Space::S)
             .align(HAlign::Center)
-            .grow_w(),
+            .grow(Dimension::Width),
             label(e.summary.clone())
                 .font(Font::Body)
                 .selectable()
@@ -3322,7 +3326,7 @@ fn episode_page(app: App, scene: Scene, id: u64) -> impl Piece {
         .align(HAlign::Leading)
         .padding(Space::L),
     )
-    .grow()
+    .grow(Dimension::Both)
     .any()
 }
 
@@ -3400,7 +3404,7 @@ fn shows_pane(scene: Scene, app: App, place: Place) -> impl Piece {
                 ))
                 .spacing(2.0)
                 .align(HAlign::Leading)
-                .grow(),
+                .grow(Dimension::Both),
             ))
             .spacing(Space::S)
             .align(VAlign::Center)
@@ -3419,9 +3423,9 @@ fn shows_pane(scene: Scene, app: App, place: Place) -> impl Piece {
             _ => Vec::new(),
         })
         .id(day::id!(show_list))
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow();
+    .grow(Dimension::Both);
     if place == Place::Desktop {
         pane.toolbar(move || {
             vec![
@@ -3525,7 +3529,7 @@ fn show_page(app: App, scene: Scene, place: Place, id: u64) -> impl Piece {
         ))
         .spacing(6.0)
         .align(HAlign::Leading)
-        .grow(),
+        .grow(Dimension::Both),
     ))
     .spacing(Space::L)
     .align(VAlign::Top)
@@ -3549,11 +3553,12 @@ fn show_page(app: App, scene: Scene, place: Place, id: u64) -> impl Piece {
                 }
             },
         ),
-        episode_list(scene, app, place, episodes, day::id!(show_episodes), false).grow(),
+        episode_list(scene, app, place, episodes, day::id!(show_episodes), false)
+            .grow(Dimension::Both),
     ))
     .align(HAlign::Leading)
     .spacing(Space::S)
-    .grow()
+    .grow(Dimension::Both)
     .any()
 }
 
@@ -3578,9 +3583,9 @@ fn discover_pane(scene: Scene, app: App, place: Place) -> impl Piece {
                     move || pods.refresh_top(),
                     day::id!(top_shows),
                 )
-                .grow(),
+                .grow(Dimension::Both),
             ))
-            .grow()
+            .grow(Dimension::Both)
         },
     )
     .otherwise(move || {
@@ -3592,9 +3597,9 @@ fn discover_pane(scene: Scene, app: App, place: Place) -> impl Piece {
             move || pods.run_search(&pods.search_term.get_untracked()),
             day::id!(search_shows),
         )
-        .grow()
+        .grow(Dimension::Both)
     }),))
-    .grow()
+    .grow(Dimension::Both)
     .searchable(
         Search::new(scene.podcast_query)
             .prompt(res::str::search_podcasts())
@@ -3676,7 +3681,7 @@ fn directory_list(
                         ))
                         .spacing(2.0)
                         .align(HAlign::Leading)
-                        .grow(),
+                        .grow(Dimension::Both),
                         when(
                             move || lib.is_subscribed(&slot.field(|s| s.feed.clone())),
                             || {
@@ -3720,7 +3725,7 @@ fn directory_list(
                 }
             })
             .id(id.clone())
-            .grow()
+            .grow(Dimension::Both)
             .any()
         },
         day::id!(directory, id_text),
@@ -3799,7 +3804,7 @@ fn preview_page(app: App, scene: Scene, place: Place, show: DirectoryShow) -> im
         ))
         .spacing(6.0)
         .align(HAlign::Leading)
-        .grow(),
+        .grow(Dimension::Both),
     ))
     .spacing(Space::L)
     .align(VAlign::Top)
@@ -3879,16 +3884,16 @@ fn preview_page(app: App, scene: Scene, place: Place, show: DirectoryShow) -> im
                     )
                     .row_height(RowHeight::Uniform(56.0))
                     .id(day::id!(preview_episodes))
-                    .grow(),
+                    .grow(Dimension::Both),
                 ))
                 .align(HAlign::Leading)
-                .grow()
+                .grow(Dimension::Both)
                 .any()
             },
             day::id!(preview_feed),
         ),
     ))
-    .grow()
+    .grow(Dimension::Both)
     .any()
 }
 
@@ -3965,7 +3970,7 @@ fn player_bar(scene: Scene) -> impl Piece {
             ))
             .spacing(2.0)
             .align(HAlign::Leading)
-            .grow(),
+            .grow(Dimension::Both),
         ))
         .spacing(Space::S)
         .align(VAlign::Center)
@@ -4004,7 +4009,7 @@ fn player_bar(scene: Scene) -> impl Piece {
         ))
         .spacing(2.0)
         .align(HAlign::Center)
-        .grow(),
+        .grow(Dimension::Both),
         // Volume and the queue.
         row((
             vector(res::vectors::volume_down)
@@ -4401,7 +4406,7 @@ fn now_playing_panel(app: App, tall: bool) -> impl Piece {
     ))
     .spacing(Space::M)
     .align(HAlign::Center)
-    .grow()
+    .grow(Dimension::Both)
     .padding(Space::L)
 }
 
@@ -4464,7 +4469,7 @@ pub fn phone_shell(scene: Scene, prefs: Prefs, primary: bool) -> impl Piece {
     } else {
         nav.local()
     };
-    nav.grow()
+    nav.grow(Dimension::Both)
 }
 
 /// A tab's page over the mini player, which shows once something is loaded.
@@ -4472,7 +4477,7 @@ fn with_mini(scene: Scene, page: impl Piece) -> impl Piece {
     let app = App::app();
     let t = app.transport;
     column((
-        page.grow(),
+        page.grow(Dimension::Both),
         when(
             move || t.loaded.get().is_some(),
             move || {
@@ -4495,7 +4500,7 @@ fn with_mini(scene: Scene, page: impl Piece) -> impl Piece {
                     ))
                     .spacing(1.0)
                     .align(HAlign::Leading)
-                    .grow()
+                    .grow(Dimension::Both)
                     .on_tap(move || scene.section.set(Section::Playing)),
                     play_button(t, 38.0, day::id!(mini_play)),
                     transport_glyph(
@@ -4515,7 +4520,7 @@ fn with_mini(scene: Scene, page: impl Piece) -> impl Piece {
             },
         ),
     ))
-    .grow()
+    .grow(Dimension::Both)
 }
 
 fn playing_tab(scene: Scene, app: App) -> impl Piece {
@@ -4524,11 +4529,17 @@ fn playing_tab(scene: Scene, app: App) -> impl Piece {
         now_playing_panel(app, true),
         when(
             move || t.order.with(|o| o.len() > 1),
-            move || column((heading(res::str::queue_up_next()), queue_list(app).grow())).grow(),
+            move || {
+                column((
+                    heading(res::str::queue_up_next()),
+                    queue_list(app).grow(Dimension::Both),
+                ))
+                .grow(Dimension::Both)
+            },
         )
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow();
+    .grow(Dimension::Both);
     nav_stack(scene.playing_path, root)
         .title(res::str::nav_playing())
         .destination(move |route: &ShelfRoute| match route {
@@ -4745,16 +4756,16 @@ fn shelf_tab(scene: Scene, app: App) -> impl Piece {
                     ))
                     .spacing(Space::M)
                     .align(HAlign::Center)
-                    .grow_w()
+                    .grow(Dimension::Width)
                     .padding(Space::L)
                 },
             ),
             scan_banner(app),
             spacer(),
         ))
-        .grow()
+        .grow(Dimension::Both)
     };
-    let root = scroll(root).grow().toolbar(move || {
+    let root = scroll(root).grow(Dimension::Both).toolbar(move || {
         vec![
             toolbar_menu(
                 day::id!(tb_shelf_add),
@@ -4849,9 +4860,9 @@ fn playlists_list(scene: Scene, app: App) -> impl Piece {
                 .update(|p| p.push(ShelfRoute::Playlist(e.key())))
         })
         .id(day::id!(playlists_list))
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
     .toolbar(move || {
         vec![
             toolbar_button(day::id!(tb_new_playlist), res::str::cmd_new_playlist())
@@ -4928,9 +4939,9 @@ fn radio_tab(scene: Scene, app: App) -> impl Piece {
             .height(48.0 * 5.0)
             .id(day::id!(radio_cuts))
         },
-        phone_stations(scene, app).grow(),
+        phone_stations(scene, app).grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
     .searchable(
         Search::new(scene.radio_query)
             .prompt(res::str::search_stations())
@@ -5115,9 +5126,9 @@ fn podcasts_tab(scene: Scene, app: App) -> impl Piece {
             day::id!(episode_list),
             true,
         )
-        .grow(),
+        .grow(Dimension::Both),
     ))
-    .grow()
+    .grow(Dimension::Both)
     .toolbar(move || {
         vec![
             toolbar_button(day::id!(tb_add_podcast), res::str::cmd_add_podcast())
@@ -5264,7 +5275,7 @@ fn folders_rows(app: App) -> impl Piece {
                 ))
                 .spacing(1.0)
                 .align(HAlign::Leading)
-                .grow(),
+                .grow(Dimension::Both),
                 label(move || res::str::track_count(slot.tracks().read() as f64).format())
                     .font(Font::Caption)
                     .secondary(),
@@ -5437,7 +5448,7 @@ pub fn scrobbling_group(app: App) -> Group_ {
                         })
                         .secure(true)
                         .id(day::id!(pref_password))
-                        .grow(),
+                        .grow(Dimension::Both),
                     button(res::str::cmd_sign_in())
                         .prominent()
                         .enabled(move || {
