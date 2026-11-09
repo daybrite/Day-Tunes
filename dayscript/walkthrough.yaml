@@ -18,6 +18,23 @@
 flow:
   - wait_for: { id: nav, within: 60 }
 
+  # Exercise both responsive shells on every mobile device. Toolkit identity does not imply
+  # phone geometry: tablets use the sidebar shell, with Songs rather than Library routes.
+  - size_class: { width: expanded, height: expanded, only_on: [uikit, material, arkui] }
+  - navigate: { route: songs, only_on: [uikit, material, arkui] }
+  - wait_for: { id: song_list, within: 60, only_on: [uikit, material, arkui] }
+  - wait_for: { id: songs_count, within: 60, only_on: [uikit, material, arkui] }
+  - screenshot: { name: wide-library, only_on: [uikit, material, arkui] }
+  - activate: { id: song_list, index: 0, only_on: [uikit, material, arkui] }
+  - wait_for: { id: bar_title, only_on: [uikit, material, arkui] }
+  - navigate: { route: queue, only_on: [uikit, material, arkui] }
+  - wait_for: { id: queue_list, only_on: [uikit, material, arkui] }
+  - navigate: { route: browse, only_on: [uikit, material, arkui] }
+  - wait_for: { id: browse_list, within: 30, only_on: [uikit, material, arkui] }
+  # The following mobile flow deliberately exercises the compact tab/stack shell.
+  - size_class: { width: compact, height: expanded, only_on: [uikit, material, arkui] }
+  - wait_for: { id: nav, only_on: [uikit, material, arkui] }
+
   # --- Library ----------------------------------------------------------------------------------
   # The fixture imports at launch; the Songs list fills as the rows land.
   - navigate: { route: songs, skip_on: [uikit, material, arkui, dom] }
@@ -197,3 +214,7 @@ flow:
   - navigate: { route: stations, only_on: [dom] }
   - navigate: { route: library, only_on: [uikit, material, arkui] }
   - wait_idle: {}
+
+  # End in the device's real geometry; later scripts must not inherit the forced phone class.
+  - size_class: { width: auto, only_on: [uikit, material, arkui] }
+  - wait_for: { id: nav, only_on: [uikit, material, arkui] }
